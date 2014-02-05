@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+
+{% load projecttags %}
+{% load humanize %}
+
+{% block pagecontent %}
+<div class="row-fluid">
+
+  {%if mru.count > 0%}
+  <div class="page-header" style="margin-top:40px;">
+      <h1>
+          Recent Builds
+       </h1>
+  </div>
+  {% for build in mru %}
+    <div class="alert {%if build.outcome == build.SUCCEEDED%}alert-success{%elif build.outcome == build.FAILED%}alert-error{%else%}alert-info{%endif%}">
+        <div class="row-fluid">
+            <div class="lead span5">
+                {%if build.outcome == build.SUCCEEDED%}<i class="icon-ok-sign success"></i>{%elif build.outcome == build.FAILED%}<i class="icon-minus-sign error"></i>{%else%}{%endif%}
+    {%if build.outcome == build.SUCCEEDED or build.outcome == build.FAILED %}
+                <a href="{%url 'builddashboard' build.pk%}" class="{%if build.outcome == build.SUCCEEDED %}success{%else%}error{%endif%}">
+    {% endif %}
+                <span data-toggle="tooltip" {%if build.target_set.all.count > 1%}title="Targets: {%for target in build.target_set.all%}{{target.target}} {%endfor%}"{%endif%}>{{build.target_set.all.0.target}} {%if build.target_set.all.count > 1%}(+ {{build.target_set.all.count|add:"-1"}}){%endif%} {{build.machine}} ({{build.completed_on|naturaltime}})</span>
+    {%if build.outcome == build.SUCCEEDED or build.outcome == build.FAILED %}
+                </a>
+    {% endif %}
+            </div>
+    {%if build.outcome == build.SUCCEEDED or build.outcome == build.FAILED %}
+            <div class="span2 lead">
+    {% if  build.errors_no %}
+                <i class="icon-minus-sign red"></i> <a href="{%url 'builddashboard' build.pk%}" class="error">{{build.errors_no}} error{{build.errors_no|pluralize}}</a>
+    {% endif %}
+            </div>
+            <div class="span2 lead">
+    {% if  build.warnings_no %}
+                <i class="icon-warning-sign yellow"></i> <a href="{%url 'builddashboard' build.pk%}" class="warning">{{build.warnings_no}} warning{{build.warnings_no|pluralize}}</a>
+    {% endif %}
+            </div>
+            <div class="lead pull-right">
+                Build time: <a href="build-time.html">{{ build.timespent|sectohms }}</a>
+            </div>
+    {%endif%}{%if build.outcome == build.IN_PROGRESS %}
+            <div class="span4">
+                <div class="progress" style="margin-top:5px;" data-toggle="tooltip" title="{{build.completeper}}% of tasks complete">
+                    <div style="width: {{build.completeper}}%;" class="bar"></div>
+                </div>
+            </div>
+            <div class="lead pull-right">ETA: in {{build.eta|naturaltime}}</div>
+    {%endif%}
+        </div>
+    </div>
+
+  {% endfor %}{%endif%}
+
+  <div class="page-header" style="margin-top:40px;">
+     <h1>
+      {% if request.GET.filter or request.GET.search and objects.count > 0  %}
+          {{objects.paginator.count}} build{{objects.paginator.count|pluralize}} found
+      {%elif objects.paginator.count == 0%}
+          No builds
+      {%else%}
+          All builds
+      {%endif%}
+     </h1>
+  </div>
+
+ {% if objects.paginator.count == 0 %}
+  <div class="row-fluid">
+      <div class="alert">
+      <form class="no-results" id="searchform">
+          <div class="input-append">
+              <input id="search" name="search" class="input-xxlarge" type="text" placeholder="{{request.GET.search}}" /><a href="javascript:$('#search').val('');searchform.submit()" class="add-on"><i class="icon-remove"></i></a>
+              <input class="btn" type="submit" value="Search"/>
+              <button class="btn btn-link" onclick="javascript:reload_params({'search':'', 'filter':''})">Show all builds</button>
+          </div>
+      </form>
+      </div>
+  </div>
+
+
+{% else %}
+{% include "basetable_top.html" %}
+        <!-- Table data rows; the order needs to match the order of "tablecols" definitions; and the <td class value needs to match the tablecols clclass value for show/hide buttons to work -->
+        {% for build in objects %}
+        <tr class="data">
+            <td class="outcome"><a href="{% url "builddashboard" build.id %}">{%if build.outcome == build.SUCCEEDED%}<i class="icon-ok-sign success"></i>{%elif build.outcome == build.FAILED%}<i class="icon-minus-sign error"></i>{%else%}{%endif%}</a></td>
+            <td class="target">{% for t in build.target_set.all %}{%if t.is_image %}<a href="{% url "builddashboard" build.id %}">{% endif %}{{t.target}}{% if t.is_image %}</a>{% endif %}<br/>{% endfor %}</td>
+            <td class="machine"><a href="{% url "builddashboard" build.id %}">{{build.machine}}</a></td>
+            <td class="started_on"><a href="{% url "builddashboard" build.id %}">{{build.started_on|date:"d/m/y H:i"}}</a></td>
+            <td class="completed_on"><a href="{% url "builddashboard" build.id %}">{{build.completed_on|date:"d/m/y H:i"}}</a></td>
+            <td class="failed_tasks error">{% query build.task_build outcome=4 order__gt=0 as exectask%}{% if exectask.count == 1 %}<a href="{% url "task" build.id exectask.0.id %}">{{exectask.0.recipe.name}}.{{exectask.0.task_name}}</a>{% elif exectask.count > 1%}<a href="{% url "tasks" build.id %}">{{exectask.count}}</a>{%endif%}</td>
+            <td class="errors_no">{% if  build.errors_no %}<a class="errors_no error" href="{% url "builddashboard" build.id %}#errors">{{build.errors_no}} error{{build.errors_no|pluralize}}</a>{%endif%}</td>
+            <td class="warnings_no">{% if  build.warnings_no %}<a class="warnings_no warning" href="{% url "builddashboard" build.id %}#warnings">{{build.warnings_no}} warning{{build.warnings_no|pluralize}}</a>{%endif%}</td>
+            <td class="time"><a href="{% url "buildtime" build.id %}">{{build.timespent|sectohms}}</a></td>
+            <td class="log">{{build.cooker_log_path}}</td>
+            <td class="output">{% if build.outcome == 0 %}{% for t in build.target_set.all %}{% if t.is_image %}<a href="{%url "builddashboard" build.id%}#images">{{build.image_fstypes}}</a>{% endif %}{% endfor %}{% endif %}</td>
+        </tr>
+
+        {% endfor %}
+
+
+{% include "basetable_bottom.html" %}
+
+{% endif %}
+</div><!-- end row-fluid-->
+
+{% endblock %}
