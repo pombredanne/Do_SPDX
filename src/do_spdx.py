@@ -26,17 +26,9 @@
 """
 class DoSpdx():
 	info = {}
-	def __init__(self, outfile, tar_file, workdir, sourcedir, pn, pv, src_uri, spdx_version, data_license):
+	def __init__(self, info):
 		import os
-		self.info['outfile'] = outfile
-		self.info['tar_file'] = tar_file
-	    self.info['workdir'] = (d.getVar('WORKDIR', True) or "")
-    	self.info['sourcedir'] = (d.getVar('S', True) or "")
-    	self.info['pn'] = (d.getVar( 'PN', True ) or "")
-    	self.info['pv'] = (d.getVar( 'PV', True ) or "")
-    	self.info['src_uri'] = (d.getVar( 'SRC_URI', True ) or "")
-    	self.info['spdx_version'] = (d.getVar('SPDX_VERSION', True) or '')
-    	self.info['data_license'] = (d.getVar('DATA_LICENSE', True) or '')
+		self.info = info
 	def do_spdx(self):
 		import os, sys, json
 		completed = False
@@ -75,7 +67,7 @@ if __name__ = '__main__':
 def run_do_spdx():
 	from argparse import ArgumentParser
 	from ConfigParser import ConfigParser
-
+	from sys import exit
 	# set up base parser
 	parser = ArgumentParser(description='Generate spdx documents for the provided tarfile')
 	parser.add_argument('package', action='append', type=file, help='Create SPDX for this package; must be tar.gz') # required path to tarball
@@ -97,20 +89,33 @@ def run_do_spdx():
 	args = parser.parse_args()	# get the arguments and parameters as key value pairs in args
 
 	info = {}
-
+	info['package'] = args['package']
 	if 'file' in vars(args):
 		config_parser = ConfigParser.RawConfigParser()
-		config.read('do_spdx.cfg')
-		info['author'] = config.get('Settings', 'author')
-		info['workdir'] = config.get('Settings', 'workdir')
-		info['package_name'] = config.get('Settings', 'package_name')
-		info['package_version'] = config.get('Settings', 'package_version')
-		info['spdx_version'] = config.get('Settings', 'spdx_version')
-		info['outfile'] = config.get('Settings', 'outfile')
-		info['tool'] = config.get('Settings', 'tool')
-		info['spdx_temp_dir'] = config.get('Settings', 'spdx_temp_dir')
-		info['spdx_temp_dir'] = config.get('Settings', 'data_license')
-
+		if args['file'].endswith('.cfg'): 
+			config_parser.read(args['file'])
+		else:
+			print "Invalid file extension."
+			exit(1)
+		info['author'] = config_parser.get('Settings', 'author')
+		info['workdir'] = config_parser.get('Settings', 'workdir')
+		info['package_name'] = config_parser.get('Settings', 'package_name')
+		info['package_version'] = config_parser.get('Settings', 'package_version')
+		info['spdx_version'] = config_parser.get('Settings', 'spdx_version')
+		info['outfile'] = config_parser.get('Settings', 'outfile')
+		info['tool'] = config_parser.get('Settings', 'tool')
+		info['spdx_temp_dir'] = config_parser.get('Settings', 'spdx_temp_dir')
+		info['data_license'] = config_parser.get('Settings', 'data_license')
+	else:
+		info['author'] = args['author']
+		info['workdir'] = args['workdir']
+		info['package_name'] = args['package_name']
+		info['package_version'] = args['package_version']
+		info['spdx_version'] = args['spdx_version']
+		info['outfile'] = args['outfile']
+		info['tool'] = args['tool']
+		info['spdx_temp_dir'] = args['spdx_temp_dir']
+		info['data_license'] = args['data_license']
 
 
 
@@ -131,7 +136,7 @@ def run_do_spdx():
  	#    info['spdx_temp_dir'] = (d.getVar('SPDX_TEMP_DIR', True) or "")
  	#    info['tar_file'] = os.path.join( info['workdir'], info['pn'] + ".tar.gz" )
 
-	mDoSpdx = DoSpdx()
+	mDoSpdx = DoSpdx(info)
 	print("Starting creation of spdx documents")
 	completed = mDoSpdx.do_spdx()
 	if completed:
