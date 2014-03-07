@@ -69,8 +69,8 @@ class DoSpdx():
 
 	def __get_header_info(self, spdx_verification_code, spdx_files):
 
-
-run_do_spdx()
+if __name__ = '__main__':
+	run_do_spdx()
 		
 def run_do_spdx():
 	from argparse import ArgumentParser
@@ -85,7 +85,7 @@ def run_do_spdx():
 	config = subparsers.add_parser('c', help='using config file')	# subparser for use of a config file
 	config.add_argument('file', type=file, action=append, help='Path to config file')	# path to config file. validate file using ConfigParser
 	
-	options = subparsers.add_parser('o', help='using command line options')	# subparser for use of options from command line
+	options = subparsers.add_parser('o', dest='', help='using command line options')	# subparser for use of options from command line
 	options.add_argument('outfile', action='append', type=file, help='Output file for SPDX after process is finished')	# path to output
 	options.add_argument('author', action='append', type=str, help='Author name')	# author name
 	options.add_argument('tool', action='append', type=str, help='URL of scanning tool host')	# SPDX version
@@ -95,6 +95,24 @@ def run_do_spdx():
 	options.add_argument('data_license', action='append', type='str', help='License type')
 	options.add_argument('spdx_temp_dir', action='append', type=file, help='Temp directory for SPDX generation')
 	args = parser.parse_args()	# get the arguments and parameters as key value pairs in args
+
+	info = {}
+
+	if 'file' in vars(args):
+		config_parser = ConfigParser.RawConfigParser()
+		config.read('do_spdx.cfg')
+		info['author'] = config.get('Settings', 'author')
+		info['workdir'] = config.get('Settings', 'workdir')
+		info['package_name'] = config.get('Settings', 'package_name')
+		info['package_version'] = config.get('Settings', 'package_version')
+		info['spdx_version'] = config.get('Settings', 'spdx_version')
+		info['outfile'] = config.get('Settings', 'outfile')
+		info['tool'] = config.get('Settings', 'tool')
+		info['spdx_temp_dir'] = config.get('Settings', 'spdx_temp_dir')
+		info['spdx_temp_dir'] = config.get('Settings', 'data_license')
+
+
+
 
 	## TODO: Complete config parsing and pass parameters to DoSpdx constructor
 
