@@ -35,31 +35,31 @@ class DoSpdx():
 
 		return completed
 
-	def __create_manifest(self, info, header, files):
+	def _create_manifest(self, info, header, files):
 
-	def __get_cached_spdx(self, sstatefile):
+	def _get_cached_spdx(self, sstatefile):
 
-	def __write_cached_spdx(self, sstatefile, ver_code, files):
+	def _write_cached_spdx(self, sstatefile, ver_code, files):
 	
-	def __setup_foss_scan(self, cache, cached_files):
+	def _setup_foss_scan(self, cache, cached_files):
 
-	def __remove_dir_tree(self, dir_name):
+	def _remove_dir_tree(self, dir_name):
 
-	def __remove_file(self, file_name):
+	def _remove_file(self, file_name):
 
-	def __list_files(self, dir):
+	def _list_files(self, dir):
 
-	def __hash_file(self, file_name):
+	def _hash_file(self, file_name):
 
-	def __hash_string(self, data):
+	def _hash_string(self, data):
 
-	def __run_fossology(self, foss_command):
+	def _run_fossology(self, foss_command):
 
-	def __create_spdx_doc(self, file_info, scanned_files):
+	def _create_spdx_doc(self, file_info, scanned_files):
 
-	def __get_ver_code(self, dirname):
+	def _get_ver_code(self, dirname):
 
-	def __get_header_info(self, spdx_verification_code, spdx_files):
+	def _get_header_info(self, spdx_verification_code, spdx_files):
 
 if __name__ = '__main__':
 	run_do_spdx()
