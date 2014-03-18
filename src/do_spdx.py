@@ -65,13 +65,23 @@ class DoSpdx():
 
 	def _get_header_info(self, spdx_verification_code, spdx_files):
 
+class InvalidFileExtensionException(Exception):
+	'''This custom Exception is used when the user provides the wrong file type.'''
+	def __init__(self, value):
+		self.value = value
+	def __str__(self):
+		return repr(self.value)
+
+
 if __name__ = '__main__':
 	run_do_spdx()
 		
 def run_do_spdx():
+	'''Run the do_spdx process from the command line. TODO: Add more comprehensive documentation to this doc string.'''
 	from argparse import ArgumentParser
 	from ConfigParser import ConfigParser
 	from sys import exit
+	import os.path
 	# set up base parser
 	parser = ArgumentParser(description='Generate spdx documents for the provided tarfile')
 	parser.add_argument('package', action='append', type=file, help='Create SPDX for this package; must be tar.gz') # required path to tarball
@@ -145,6 +155,10 @@ def run_do_spdx():
 		elif args.d:
 			info['data_license'] = args.d
 
+	# Validate user input
+	fileName, fileExtension = os.path.splitext(info['outfile'])
+	if '.spdx'!=fileExtension:
+			raise InvalidFileExtensionException(fileExtension)
 	## TODO: Complete config parsing and pass parameters to DoSpdx constructor
 
 	#    info['workdir'] = (d.getVar('WORKDIR', True) or "")
