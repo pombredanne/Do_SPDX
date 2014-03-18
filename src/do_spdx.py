@@ -25,6 +25,10 @@
 
 """
 class DoSpdx():
+	"""
+	This class manages the creation and storage of spdx documentation into a database.
+
+	"""
 	info = {}
 	def __init__(self, info):
 		import os
@@ -74,22 +78,22 @@ def run_do_spdx():
 
 	# set up subparsers
 	subparsers = parser.add_subparsers(title='config method', description='method of configuration')
-	config = subparsers.add_parser('c', help='using config file')	# subparser for use of a config file
+	config = subparsers.add_parser('-c', help='using config file')	# subparser for use of a config file
 	config.add_argument('file', type=file, action=append, help='Path to config file')	# path to config file. validate file using ConfigParser
 	
-	options = subparsers.add_parser('o', dest='', help='using command line options')	# subparser for use of options from command line
-	options.add_argument('outfile', action='append', type=file, help='Output file for SPDX after process is finished')	# path to output
-	options.add_argument('author', action='append', type=str, help='Author name')	# author name
-	options.add_argument('tool', action='append', type=str, help='URL of scanning tool host')	# SPDX version
-	options.add_argument('package_name', action='append', type=str, help='Package name')
-	options.add_argument('package_version', action='append', type=str, help='Package version')
-	options.add_argument('spdx_version', action='append', type=str, help='Which SPDX version to generate')
-	options.add_argument('data_license', action='append', type='str', help='License type')
-	options.add_argument('spdx_temp_dir', action='append', type=file, help='Temp directory for SPDX generation')
+	options = subparsers.add_parser('-o', dest='', help='using command line options')	# subparser for use of options from command line
+	options.add_argument('-f', '--outfile', action='append', type=file, required=True, help='Output file for SPDX after process is finished')	# path to output
+	options.add_argument('-a', '--author', action='append', type=str, required=True, help='Author name')	# author name
+	options.add_argument('-t', '--tool', action='append', type=str, required=True, help='URL of scanning tool host')	# SPDX version
+	options.add_argument('-pn', '--package_name', action='append', type=str, required=True, help='Package name')
+	options.add_argument('-pv', '--package_version', action='append', type=str, required=True, help='Package version')
+	options.add_argument('-sv', '--spdx_version', action='append', type=str, required=True, help='Which SPDX version to generate')
+	options.add_argument('-d', '--data_license', action='append', type='str', required=True, help='License type')
+	options.add_argument('-sd', '--spdx_temp_dir', action='append', type=file, required=True, help='Temp directory for SPDX generation')
 	args = parser.parse_args()	# get the arguments and parameters as key value pairs in args
 
 	info = {}
-	info['package'] = args['package']
+	info['tar_file'] = args['package']
 	if 'file' in vars(args):
 		config_parser = ConfigParser.RawConfigParser()
 		if args['file'].endswith('.cfg'): 
@@ -107,17 +111,39 @@ def run_do_spdx():
 		info['spdx_temp_dir'] = config_parser.get('Settings', 'spdx_temp_dir')
 		info['data_license'] = config_parser.get('Settings', 'data_license')
 	else:
-		info['author'] = args['author']
-		info['workdir'] = args['workdir']
-		info['package_name'] = args['package_name']
-		info['package_version'] = args['package_version']
-		info['spdx_version'] = args['spdx_version']
-		info['outfile'] = args['outfile']
-		info['tool'] = args['tool']
-		info['spdx_temp_dir'] = args['spdx_temp_dir']
-		info['data_license'] = args['data_license']
-
-
+		if args.author
+			info['author'] = args.author
+		elif args.a:
+			info['author'] = args.a
+		info['workdir'] = os.getcwd
+		if args.package_name:
+			info['package_name'] = args.package_name
+		elif args.pn
+			info['package_name'] = args.pn
+		if args.package_version:
+			info['package_version'] = args.package_version
+		elif args.pv:
+			info['package_version'] = args.pv
+		if args.spdx_version:
+			info['spdx_version'] = args.spdx_version
+		elif args.sv:
+			info['spdx_version'] = args.sv
+		if args.outfile:	
+			info['outfile'] = args.outfile
+		elif args.f:
+			info['outfile'] = args.f
+		if args.tool:
+			info['tool'] = args.tool
+		elif args.t:
+			info['tool'] = args.t
+		if args.spdx_temp_dir:
+			info['spdx_temp_dir'] = args.spdx_temp_dir
+		elif args.sd:
+			info['spdx_temp_dir'] = args.sd
+		if args.data_license:
+			info['data_license'] = args.data_license
+		elif args.d:
+			info['data_license'] = args.d
 
 	## TODO: Complete config parsing and pass parameters to DoSpdx constructor
 
