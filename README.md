@@ -23,10 +23,10 @@ There are two ways to configure your runtime for Do_SPDX. The first way involves
 
 The do_spdx.cfg file contains the current required arguments and their types under the [Setting Schema] section. Use this as a template for your customized cfg file. For a more in depth description of how each argument is used, read the Process section of this README.
 
-To run Do_SPDX, simply execute it with python, e.g.:
-	python do_spdx.py mypackage.tar.gz -c do_spdx.cfg
-or
-	python do_spdx.py mypackage.tar.gz -o -f /example/output/path.txt -a "John Smith" -t Fossology -pn "Apache" -pv 3 -sv 1.2 -d "MIT" -sd "/tmp/path" 
+To run Do_SPDX, simply execute it with python, e.g.:  
+`python do_spdx.py mypackage.tar.gz -c do_spdx.cfg`  
+or  
+`python do_spdx.py mypackage.tar.gz -o -f /example/output/path.txt -a "John Smith" -t Fossology -pn "Apache" -pv 3 -sv 1.2 -d "MIT" -sd "/tmp/path"`
 
 Obviously it is much nicer to use the configuration file over the raw command line interface. There are more plans in the work to expand upon the options in the configuration file, such as database parameters, scanner parameters, etc. This README will be updated as these are implemented.
 
