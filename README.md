@@ -30,8 +30,8 @@ or
 
 Obviously it is much nicer to use the configuration file over the raw command line interface. There are more plans in the work to expand upon the options in the configuration file, such as database parameters, scanner parameters, etc. This README will be updated as these are implemented.
 
-Processes
----------
+Overview
+--------
 
 
 
@@ -49,5 +49,5 @@ Troubleshooting
 Licensing
 ---------
 
-This software is licensed under the Apache Commons 
+This software is licensed under the Apache License, Version 2.0.
 

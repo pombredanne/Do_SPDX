@@ -29,7 +29,7 @@
 # usage options and parameters.
 #
 # Licensing information for Do_SPDX project can be found under
-# /documentation/license/
+# /documentation/license/LICENSE.txt
 
 # TODO: Get requirements for configuraiton
 # TODO: Identify class members
