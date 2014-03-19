@@ -1,5 +1,4 @@
 ##### Version 0.9
-	###### New Features
+	New Features
 	
-	###### Documentation
-	
+###### Documentation	
