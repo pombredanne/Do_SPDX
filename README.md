@@ -11,7 +11,7 @@ The Do_SPDX project looks to extract the spdx generation from the yocto project 
 Version
 -------
 
-Version 0.9
+Version 0.9; Changelog can be found [here](https://github.com/chaughawout/Do_SPDX/blob/master/CHANGELOG.md "do_spdx changelog").
 
 License
 -------
