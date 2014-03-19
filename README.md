@@ -16,17 +16,19 @@ Version 0.9; Changelog can be found [here](https://github.com/chaughawout/Do_SPD
 License
 -------
 
-This software is licensed under the Apache License, Version 2.0.
+This software is licensed under the Apache License, Version 2.0. Which can be found [here](https://github.com/chaughawout/Do_SPDX/blob/master/LICENSE.md "Apache 2.0 License").
 
 Copyright
 ---------
 
-//TODO
+Copyright 2014 Corbin Haghawout, Joe Meyer, Ethan Harner under the Apache License, Version 2.0.
 
 Technical Specs
 ---------------
 
-//TODO
+Assumptions: The user has both mySQL and Python 2.7.6 installed. 
+You can download the Python 2.7.6 installer [here](https://www.python.org/download/releases/2.7.6/ "Python 2.7.6 download").  
+The mySQL installer can be found [here for linux](http://dev.mysql.com/doc/refman/5.1/en/linux-installation.html "MySQL Linux Installation") and [here for windows](http://dev.mysql.com/doc/refman/5.1/en/windows-installation.html "MySQL Windows Installation").
 
 System Design
 -------------
@@ -34,11 +36,7 @@ System Design
 //TODO
 
 Installation
-------------
-
-Assumptions: The user has both mySQL and Python 2.7.6 installed. 
-You can download the Python 2.7.6 installer [here](https://www.python.org/download/releases/2.7.6/ "Python 2.7.6 download").  
-The mySQL installer can be found [here for linux](http://dev.mysql.com/doc/refman/5.1/en/linux-installation.html "MySQL Linux Installation") and [here for windows](http://dev.mysql.com/doc/refman/5.1/en/windows-installation.html "MySQL Windows Installation").  
+------------  
 
 To install Do_SPDX, clone [this](https://github.com/chaughawout/Do_SPDX) git repo. Everything should be ready to go from there!
 
@@ -59,7 +57,7 @@ Obviously it is much nicer to use the configuration file over the raw command li
 Communities of Interest
 -----------------------
 
-//TODO
+This project is most closely involved with the SPDX community and loosely related to the Yocto Project community.
 
 Communication
 -------------
@@ -69,7 +67,7 @@ To contribute to this project, please Fork this repo and begin making pull-reque
 Code Management
 ---------------
 
-//TODO
+The code for this project is managed through the github repo found [here](https://github.com/chaughawout/Do_SPDX "Apache 2.0 License").
 
 Troubleshooting
 ---------------
