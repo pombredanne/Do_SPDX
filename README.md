@@ -1,18 +1,42 @@
 Do_SPDX
 =======
+
 A configurable SPDX generator module for python.
 
-Introduction
-------------
+Overview
+--------
 
 The Do_SPDX project looks to extract the spdx generation from the yocto project into an object oriented, flexible, and configurable module in python. The project looks to achieve this through a sleek command line interface, configurable database caching, and implementing the do_spdx functionality in a Python class.
 
-Installation
-------------
+Version
+-------
+
+Version 0.9; Changelog can be found [here](https://github.com/chaughawout/Do_SPDX/blob/master/CHANGELOG.md "do_spdx changelog").
+
+License
+-------
+
+This software is licensed under the Apache License, Version 2.0. Which can be found [here](https://github.com/chaughawout/Do_SPDX/blob/master/LICENSE.md "Apache 2.0 License").
+
+Copyright
+---------
+
+Copyright 2014 Corbin Haghawout, Joe Meyer, Ethan Harner under the Apache License, Version 2.0.
+
+Technical Specs
+---------------
 
 Assumptions: The user has both mySQL and Python 2.7.6 installed. 
 You can download the Python 2.7.6 installer [here](https://www.python.org/download/releases/2.7.6/ "Python 2.7.6 download").  
-The mySQL installer can be found [here for linux](http://dev.mysql.com/doc/refman/5.1/en/linux-installation.html "MySQL Linux Installation") and [here for windows](http://dev.mysql.com/doc/refman/5.1/en/windows-installation.html "MySQL Windows Installation").  
+The mySQL installer can be found [here for linux](http://dev.mysql.com/doc/refman/5.1/en/linux-installation.html "MySQL Linux Installation") and [here for windows](http://dev.mysql.com/doc/refman/5.1/en/windows-installation.html "MySQL Windows Installation").
+
+System Design
+-------------
+
+//TODO
+
+Installation
+------------  
 
 To install Do_SPDX, clone [this](https://github.com/chaughawout/Do_SPDX) git repo. Everything should be ready to go from there!
 
@@ -30,24 +54,21 @@ or
 
 Obviously it is much nicer to use the configuration file over the raw command line interface. There are more plans in the work to expand upon the options in the configuration file, such as database parameters, scanner parameters, etc. This README will be updated as these are implemented.
 
-Overview
---------
+Communities of Interest
+-----------------------
 
+This project is most closely involved with the SPDX community and loosely related to the Yocto Project community.
 
-
-
-Contributing
-------------
+Communication
+-------------
 
 To contribute to this project, please Fork this repo and begin making pull-requests. Any bugs should be reported to this repo's bug tracker. You may also contact the owner directly at `corbin.haughawout@gmail.com`
 
-Troubleshooting
+Code Management
 ---------------
 
+The code for this project is managed through the github repo found [here](https://github.com/chaughawout/Do_SPDX "Apache 2.0 License").
 
-
-Licensing
----------
-
-This software is licensed under the Apache License, Version 2.0.
+Troubleshooting
+---------------
 
