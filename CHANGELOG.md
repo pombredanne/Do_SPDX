@@ -1,4 +1,4 @@
-##### Version 0.9
+##### Version 0.9 (3/19/2014)
 	New Features
 		Separated the Python script from the Yocto build process
 		Allows command-line interfacing with the script
