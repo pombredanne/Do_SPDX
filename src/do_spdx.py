@@ -31,31 +31,68 @@
 # Licensing information for Do_SPDX project can be found under
 # /documentation/license/LICENSE.txt
 
-# TODO: Get requirements for configuraiton
-# TODO: Identify class members
-# TODO: Implement do_spdx
+import logging
+logger = logging.getLogger(__name__)
 
-"""
-
-"""
 class DoSpdx():
 	"""
 	This class manages the creation and storage of spdx documentation into a database.
-
+	Simply call do_spdx after initializing a DoSpdx object and passing it the required arguments.
 	"""
+
 	info = {}
 	def __init__(self, info):
+		'''
+		Construct a DoSpdx object with the provided info settings.
+		All required settings are validated when do_spdx is called.
+		'''
 		import os
 		self.info = info
+		logger.info("Created DoSpdx obejct with info: " + str(info))
 	def do_spdx(self):
+		'''
+		The single entry point for the DoSpdx process.
+		TODO: Add details on expections of the process and user input,
+		how it validates that input, and what it will output.
+		'''
 		import os, sys, json
-		completed = False
+		_validate_configuration()
+		logger.info("Starting do_spdx process")
+		cur_ver_code = get_ver_code( info['sourcedir'])
+		cache_cur = False
+		if not os.path.exists( info['spdx_temp_dir'] ):
+			os.makedirs(info['spdx_temp_dir'])
 
-		return completed
+#		if package is in database:  check database for package
+#			cache_cur = True
+#		else:
+#			local_file_info = setup_foss_scan( info, True, cached_spdx['Files'])
 
+
+			
 	def _create_manifest(self, info, header, files):
 
+	def _validate_configuration(self):
+		logger.info("Starting validation")
+
 	def _get_cached_spdx(self, sstatefile):
+		import json, mysql
+		stored_spdx_info = {}
+		try:
+			conn = mysql.connector.connect(user=info['database_user'], password=info['database_password'],
+				host=info['database_host'], database=info['database_env'])
+			cur = conn.cursor()
+
+		except mysql.connector.Error as err:
+			if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+				log.error("Access denied to database.")
+			elif err.errno == errorcode.ER_BAD_DB_ERROR:
+				log.error("Database does not exist.")
+			else:
+				log.error(str(err))
+			exit()
+		else:	
+			conn.close()
 
 	def _write_cached_spdx(self, sstatefile, ver_code, files):
 	
@@ -95,7 +132,9 @@ def run_do_spdx():
 	from argparse import ArgumentParser
 	from ConfigParser import ConfigParser
 	from sys import exit
-	import os.path
+	import os.path, logging
+
+
 	# set up base parser
 	parser = ArgumentParser(description='Generate spdx documents for the provided tarfile')
 	parser.add_argument('package', action='append', type=file, help='Create SPDX for this package; must be tar.gz') # required path to tarball
@@ -106,7 +145,7 @@ def run_do_spdx():
 	config.add_argument('file', type=file, action=append, help='Path to config file')	# path to config file. validate file using ConfigParser
 	
 	options = subparsers.add_parser('-o', dest='', help='using command line options')	# subparser for use of options from command line
-	options.add_argument('-f', '--outfile', action='append', type=file, required=True, help='Output file for SPDX after process is finished')	# path to output
+	options.add_argument('-f', '--outfile', action='append', type=file, required=False, help='Output file for SPDX after process is finished')	# path to output
 	options.add_argument('-a', '--author', action='append', type=str, required=True, help='Author name')	# author name
 	options.add_argument('-t', '--tool', action='append', type=str, required=True, help='URL of scanning tool host')	# SPDX version
 	options.add_argument('-pn', '--package_name', action='append', type=str, required=True, help='Package name')
@@ -156,6 +195,8 @@ def run_do_spdx():
 			info['outfile'] = args.outfile
 		elif args.f:
 			info['outfile'] = args.f
+		else:
+			info['outfile'] = ""	# Stdout
 		if args.tool:
 			info['tool'] = args.tool
 		elif args.t:
@@ -169,31 +210,8 @@ def run_do_spdx():
 		elif args.d:
 			info['data_license'] = args.d
 
-	# Validate user input
-	fileName, fileExtension = os.path.splitext(info['outfile'])
-	if '.spdx'!=fileExtension:
-			raise InvalidFileExtensionException(fileExtension)
-	## TODO: Complete config parsing and pass parameters to DoSpdx constructor
-
-	#    info['workdir'] = (d.getVar('WORKDIR', True) or "")
-	#    info['sourcedir'] = (d.getVar('S', True) or "")
- 	#    info['pn'] = (d.getVar( 'PN', True ) or "")
- 	#    info['pv'] = (d.getVar( 'PV', True ) or "")
- 	#    info['src_uri'] = (d.getVar( 'SRC_URI', True ) or "")
- 	#    info['spdx_version'] = (d.getVar('SPDX_VERSION', True) or '')
- 	#    info['data_license'] = (d.getVar('DATA_LICENSE', True) or '')
- 	#    spdx_sstate_dir = (d.getVar('SPDXSSTATEDIR', True) or "")
- 	#    manifest_dir = (d.getVar('SPDX_MANIFEST_DIR', True) or "")
- 	#    info['outfile'] = os.path.join(manifest_dir, info['pn'] + ".spdx" )
- 	#    sstatefile = os.path.join(spdx_sstate_dir, 
- 	#    info['pn'] + info['pv'] + ".spdx" )
- 	#    info['spdx_temp_dir'] = (d.getVar('SPDX_TEMP_DIR', True) or "")
- 	#    info['tar_file'] = os.path.join( info['workdir'], info['pn'] + ".tar.gz" )
-
+	# Get DoSpdx object with supplied parameters
 	mDoSpdx = DoSpdx(info)
-	print("Starting creation of spdx documents")
+	# Run do_spdx process on that object
 	completed = mDoSpdx.do_spdx()
-	if completed:
-		print("SPDX generated successfully.")
-	else:
-		print("SPDX generation unsuccessful.")
+	# Output should be for the supplied outfile, or to stdout if not supplied.
