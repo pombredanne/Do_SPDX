@@ -1,3 +1,17 @@
+# Copyright 2014 Corbin Haughawout
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 # This class integrates real-time license scanning, generation of SPDX standard
 # output and verifiying license info.
 #
@@ -14,8 +28,8 @@
 # DoSpdx class, or execute the file on the command line with the appropriate
 # usage options and parameters.
 #
-# Licensing information for this file and project can be found in
-# /documentation/License
+# Licensing information for Do_SPDX project can be found under
+# /documentation/license/
 
 # TODO: Get requirements for configuraiton
 # TODO: Identify class members
@@ -77,7 +91,7 @@ if __name__ = '__main__':
 	run_do_spdx()
 		
 def run_do_spdx():
-	'''Run the do_spdx process from the command line. TODO: Add more comprehensive documentation to this doc string.'''
+	'''Run the do_spdx process from the command line. '''
 	from argparse import ArgumentParser
 	from ConfigParser import ConfigParser
 	from sys import exit
