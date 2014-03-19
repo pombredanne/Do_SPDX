@@ -1,11 +1,37 @@
 Do_SPDX
 =======
+
 A configurable SPDX generator module for python.
 
-Introduction
-------------
+Overview
+--------
 
 The Do_SPDX project looks to extract the spdx generation from the yocto project into an object oriented, flexible, and configurable module in python. The project looks to achieve this through a sleek command line interface, configurable database caching, and implementing the do_spdx functionality in a Python class.
+
+Version
+-------
+
+Version 0.9
+
+License
+-------
+
+This software is licensed under the Apache License, Version 2.0.
+
+Copyright
+---------
+
+//TODO
+
+Technical Specs
+---------------
+
+//TODO
+
+System Design
+-------------
+
+//TODO
 
 Installation
 ------------
@@ -30,24 +56,21 @@ or
 
 Obviously it is much nicer to use the configuration file over the raw command line interface. There are more plans in the work to expand upon the options in the configuration file, such as database parameters, scanner parameters, etc. This README will be updated as these are implemented.
 
-Overview
---------
+Communities of Interest
+-----------------------
 
+//TODO
 
-
-
-Contributing
-------------
+Communication
+-------------
 
 To contribute to this project, please Fork this repo and begin making pull-requests. Any bugs should be reported to this repo's bug tracker. You may also contact the owner directly at `corbin.haughawout@gmail.com`
 
-Troubleshooting
+Code Management
 ---------------
 
+//TODO
 
-
-Licensing
----------
-
-This software is licensed under the Apache License, Version 2.0.
+Troubleshooting
+---------------
 
