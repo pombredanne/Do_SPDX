@@ -62,13 +62,11 @@ This project is most closely involved with the SPDX community and loosely relate
 Communication
 -------------
 
-To contribute to this project, please Fork this repo and begin making pull-requests. Any bugs should be reported to this repo's bug tracker. You may also contact the owner directly at `corbin.haughawout@gmail.com`
+To contribute to this project, please Fork this repo and begin making pull-requests. Any bugs should be reported to this repository's bug tracker so that a developer can pick it up and starting implementing a fix. You should contact the owner at `corbin.haughawout@gmail.com` if you find a potentially devestating problem.
 
 Code Management
 ---------------
 
 The code for this project is managed through the github repo found [here](https://github.com/chaughawout/Do_SPDX "Apache 2.0 License").
 
-Troubleshooting
----------------
-
+>Thanks

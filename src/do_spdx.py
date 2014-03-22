@@ -60,28 +60,50 @@ class DoSpdx():
 		logger.info("Starting do_spdx process")
 		cur_ver_code = get_ver_code( info['sourcedir'])
 		cache_cur = False
+
 		if not os.path.exists( info['spdx_temp_dir'] ):
 			os.makedirs(info['spdx_temp_dir'])
+			logger.info("Created directory: " str(info['spdx_temp_dir']))
+
+		# get checksum of package so that we can check database
+		package_cs = _hash_file(info['package'])
+		if _check_database_for_package(package_cs)
 
 #		if package is in database:  check database for package
 #			cache_cur = True
 #		else:
 #			local_file_info = setup_foss_scan( info, True, cached_spdx['Files'])
 
+	def _check_database_for_package(self, package_cs):
+		import mysql, json
+		# procedure is something like select * from packages where package_checksum = package_cs
+		conn = mysql.connector.connet(user=info['database_user'], password=info['database_password'], 
+			host=['database_host'], database=['database_name'])
+		with con:
+			cur = con.cursor()
+			# TODO: Change this to be a stored procedure? Or at least a prepared statement
+			cur.execute("SELECT * FROM packages WHERE package_checksum = " + package_cs)
+			rows = cur.fetchall()
+		if rows == None:
+			return False
+		else:
+			return True
 
-			
 	def _create_manifest(self, info, header, files):
 
 	def _validate_configuration(self):
 		logger.info("Starting validation")
+		
 
-	def _get_cached_spdx(self, sstatefile):
+
+	def _get_cached_spdx(self):
 		import json, mysql
 		stored_spdx_info = {}
 		try:
 			conn = mysql.connector.connect(user=info['database_user'], password=info['database_password'],
-				host=info['database_host'], database=info['database_env'])
+				host=info['database_host'], database=info['database_name'])
 			cur = conn.cursor()
+			cur.execute('')
 
 		except mysql.connector.Error as err:
 			if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
@@ -105,8 +127,21 @@ class DoSpdx():
 	def _list_files(self, dir):
 
 	def _hash_file(self, file_name):
+		try:
+        	f = open( file_name, 'rb' )
+        	data_string = f.read()
+    	except:
+        	return None
+    	finally:
+        	f.close()
+    	sha1 = hash_string( data_string )
+    	return sha1
 
 	def _hash_string(self, data):
+		import hashlib
+		sha1 = hashlib.sha1()
+		sha1.update(data)
+		return sha1.hexdigest()
 
 	def _run_fossology(self, foss_command):
 
