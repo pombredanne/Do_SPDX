@@ -33,7 +33,7 @@ The mySQL installer can be found [here for linux](http://dev.mysql.com/doc/refma
 System Design
 -------------
 
-To follow Unix standards, all output will be assumed to go to stdout unless output is clarified in the config file
+To follow Unix standards, all output will be assumed to go to stdout unless output is clarified in the configuration file they provide.
 
 Installation
 ------------  
@@ -57,7 +57,7 @@ Obviously it is much nicer to use the configuration file over the raw command li
 Communities of Interest
 -----------------------
 
-This project is most closely involved with the SPDX community and loosely related to the Yocto Project community.
+This project is most closely involved with the SPDX community but is open to anybody who is looking to automate the creation and validation of SPDX documents. Companies who consume or distribute products with open source might be interested in this project as a means to document their licensing for legal reasons. Since this project is licensed under Apache 2.0, any company may do as they wish with the source and tailor a solution from it for their needs.
 
 Communication
 -------------
