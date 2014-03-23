@@ -177,12 +177,12 @@ class DoSpdx():
 		by the user, stdout if none is provided.
 		'''
 	    with open(info['outfile'], 'w') as f:
-        f.write(header + '\n')
-        for chksum, block in files.iteritems():
-            for key, value in block.iteritems():
-                f.write(key + ": " + value)
-                f.write('\n')
-            f.write('\n')
+	        f.write(header + '\n')
+	        for chksum, block in files.iteritems():
+	            for key, value in block.iteritems():
+	                f.write(key + ": " + value)
+	                f.write('\n')
+	            f.write('\n')
 
 	def _get_header_info(self, spdx_verification_code, spdx_files):
 		"""
