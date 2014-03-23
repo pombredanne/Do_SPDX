@@ -108,7 +108,7 @@ class DoSpdx():
 
 	def _get_checksums_for_list(files):
 		'''
-		Get all sha1's of the 
+		Get all sha1's of the staged files.
 		'''
 		checksums = {}
 		for f in full_file_paths:
@@ -118,9 +118,9 @@ class DoSpdx():
 
 	def _get_filepaths(directory):
 		"""
-	    This function will generate the file names in a directory 
-	    tree by walking the tree either top-down or bottom-up. For each 
-	    directory in the tree rooted at directory top (including top itself), 
+	    This function will generate the file names in a directory
+	    tree by walking the tree either top-down or bottom-up. For each
+	    directory in the tree rooted at directory top (including top itself),
 	    it yields a 3-tuple (dirpath, dirnames, filenames).
 	    """
 	    file_paths = []  # List which will store all of the full filepaths.
@@ -174,7 +174,7 @@ class DoSpdx():
 		'''
 		Create the manifest containing the license information returned
 		from the scanner(s). The manifest is output to the outfile provided
-		by the user, stdout if none is provided. The header 
+		by the user, stdout if none is provided.
 		'''
 	    with open(info['outfile'], 'w') as f:
         f.write(header + '\n')
