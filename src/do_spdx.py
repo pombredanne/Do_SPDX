@@ -51,7 +51,7 @@ class DoSpdx():
 		import os
 		self.info = info
 		_validate_configuration()
-		logger.debug("Created DoSpdx object with info: " + str(info))
+		logger.debug("Created DoSpdx obejct with info: " + str(info))
 
 	def do_spdx(self):
 		'''
@@ -273,10 +273,10 @@ def run_do_spdx():
 	
 	options = subparsers.add_parser('-o', dest='', help='using command line options')	# subparser for use of options from command line
 	options.add_argument('-f', '--outfile', action='append', type=file, required=False, help='Output file for SPDX after process is finished')	# path to output
-	#options.add_argument('-a', '--author', action='append', type=str, required=True, help='Author name')	# author name
+	options.add_argument('-a', '--author', action='append', type=str, required=True, help='Author name')	# author name
 	options.add_argument('-t', '--tool', action='append', type=str, required=True, help='URL of scanning tool host')	# SPDX version
 	options.add_argument('-pn', '--package_name', action='append', type=str, required=True, help='Package name')
-	##options.add_argument('-pv', '--package_version', action='append', type=str, required=True, help='Package version')
+	options.add_argument('-pv', '--package_version', action='append', type=str, required=True, help='Package version')
 	options.add_argument('-sv', '--spdx_version', action='append', type=str, required=True, help='Which SPDX version to generate')
 	options.add_argument('-d', '--data_license', action='append', type='str', required=True, help='License type')
 	options.add_argument('-sd', '--spdx_temp_dir', action='append', type=file, required=True, help='Temp directory for SPDX generation')
@@ -284,24 +284,23 @@ def run_do_spdx():
 
 	info = {}
 	info['tar_file'] = args['package']
-	# if 'file' in vars(args):
-	# 	config_parser = ConfigParser.RawConfigParser()
-	if args['file'].endswith('.cfg'): 
-		config_parser.read(args['file'])
+	if 'file' in vars(args):
+		config_parser = ConfigParser.RawConfigParser()
+		if args['file'].endswith('.cfg'): 
+			config_parser.read(args['file'])
+		else:
+			print "Invalid file extension."
+			exit(1)
+		info['author'] = config_parser.get('Settings', 'author')
+		info['workdir'] = config_parser.get('Settings', 'workdir')
+		info['package_name'] = config_parser.get('Settings', 'package_name')
+		info['package_version'] = config_parser.get('Settings', 'package_version')
+		info['spdx_version'] = config_parser.get('Settings', 'spdx_version')
+		info['outfile'] = config_parser.get('Settings', 'outfile')
+		info['tool'] = config_parser.get('Settings', 'tool')
+		info['spdx_temp_dir'] = config_parser.get('Settings', 'spdx_temp_dir')
+		info['data_license'] = config_parser.get('Settings', 'data_license')
 	else:
-		print "Invalid file extension."
-		exit(1)
-	#info['author'] = config_parser.get('Settings', 'author')
-	#info['workdir'] = config_parser.get('Settings', 'workdir')
-	info['package_name'] = config_parser.get('Settings', 'package_name') # I think this is only used where we should be using info[tar_ball]
-	##info['package_version'] = config_parser.get('Settings', 'package_version')
-	info['spdx_version'] = config_parser.get('Settings', 'spdx_version')
-	info['outfile'] = config_parser.get('Settings', 'outfile')
-	info['tool'] = config_parser.get('Settings', 'tool') # not being used?
-	info['spdx_temp_dir'] = config_parser.get('Settings', 'spdx_temp_dir') # Is this being used?
-	info['data_license'] = config_parser.get('Settings', 'data_license')
-	
-	''' else:
 		if args.author
 			info['author'] = args.author
 		elif args.a:
@@ -337,7 +336,6 @@ def run_do_spdx():
 			info['data_license'] = args.data_license
 		elif args.d:
 			info['data_license'] = args.d
-	'''
 
 	# Get DoSpdx object with supplied parameters
 	mDoSpdx = DoSpdx(info)
