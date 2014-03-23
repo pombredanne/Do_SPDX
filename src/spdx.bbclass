@@ -114,7 +114,7 @@ def create_manifest(info,header,files):
                 f.write('\n')
             f.write('\n')
 
-def get_cached_spdx( sstatefile ):
+def get_cached_spdx( sstatefile ):  # loads the cache, returns all cached spdx
     import json
     cached_spdx_info = {}
     with open( sstatefile, 'r' ) as f:
@@ -153,7 +153,7 @@ def setup_foss_scan( info, cache, cached_files ):
         checksum = hash_file( abs_path )
         mtime = time.asctime(time.localtime(stats.st_mtime))
         
-        ## retain cache information if it exists
+        # retain cache information if it exists
         file_info[checksum] = {}
         if cache and checksum in cached_files:
             file_info[checksum] = cached_files[checksum]

@@ -45,111 +45,204 @@ class DoSpdx():
 		'''
 		Construct a DoSpdx object with the provided info settings.
 		All required settings are validated when do_spdx is called.
+		If settings are invalid, object initialization fails and
+		the system aborts the object creation.
 		'''
 		import os
 		self.info = info
-		logger.info("Created DoSpdx obejct with info: " + str(info))
+		_validate_configuration()
+		logger.debug("Created DoSpdx obejct with info: " + str(info))
+
 	def do_spdx(self):
 		'''
 		The single entry point for the DoSpdx process.
 		TODO: Add details on expections of the process and user input,
 		how it validates that input, and what it will output.
 		'''
-		import os, sys, json
-		_validate_configuration()
+		import os, sys, json, tarfile
 		logger.info("Starting do_spdx process")
-		cur_ver_code = get_ver_code( info['sourcedir'])
-		cache_cur = False
 
-		if not os.path.exists( info['spdx_temp_dir'] ):
-			os.makedirs(info['spdx_temp_dir'])
-			logger.info("Created directory: " str(info['spdx_temp_dir']))
 
-		# get checksum of package so that we can check database
-		package_cs = _hash_file(info['package'])
-		if _check_database_for_package(package_cs)
 
-#		if package is in database:  check database for package
-#			cache_cur = True
-#		else:
-#			local_file_info = setup_foss_scan( info, True, cached_spdx['Files'])
+		# check if package is in staging directory
+		install_path = os.path.abspath("../do_spdx/staging/" + info['package'])
 
-	def _check_database_for_package(self, package_cs):
-		import mysql, json
-		# procedure is something like select * from packages where package_checksum = package_cs
-		conn = mysql.connector.connet(user=info['database_user'], password=info['database_password'], 
-			host=['database_host'], database=['database_name'])
-		with con:
-			cur = con.cursor()
-			# TODO: Change this to be a stored procedure? Or at least a prepared statement
-			cur.execute("SELECT * FROM packages WHERE package_checksum = " + package_cs)
-			rows = cur.fetchall()
-		if rows == None:
-			return False
+		if not os.path.exists(install_path):	# if path does not exist
+			logger.error("Package not in staging directory. Stopping process.")
+
+		# package exists, so extract the package to the staging directory
+		# and sha1 it
+		tar = tarfile.open(install_path, 10240, "r:gz")
+
+		tar.extractall("../do_spdx/staging/")
+		tar.close()
+
+		# get the package name without .tar.gz extension for hashing
+		extracted = os.path.splitext(info['package'])
+
+		file_hash = _hash_file(extracted)
+
+		# check if package checksum matches a row in database
+		in_database = False
+		file_list = {}
+		if not _file_in_database(file_hash):
+			file_list = _setup_foss_scan(extracted)
 		else:
-			return True
-
-	def _create_manifest(self, info, header, files):
-
-	def _validate_configuration(self):
-		logger.info("Starting validation")
+			in_database = True
 		
 
+	def _setup_foss_scan(self, file_name):
+		'''
+		Set up the requirements for the fossology scan. Gather all unknown files
+		for scanning and all known files, return both lists.
+		'''
+		import errno, shutil, tarfile, os
 
-	def _get_cached_spdx(self):
-		import json, mysql
-		stored_spdx_info = {}
+		full_file_paths = []
+		# get all files whose checksum does not match in database
+		# then send to fossology for scanning
+		full_file_paths = _get_filepaths(file_name)
+		checksums = _get_checksums_for_list(full_file_paths)
+
+
+
+	def _get_checksums_for_list(files):
+		'''
+		Get all sha1's of the 
+		'''
+		checksums = {}
+		for f in full_file_paths:
+			checksums[f] = _hash_file(f)
+
+		return checksums
+
+	def _get_filepaths(directory):
+		"""
+	    This function will generate the file names in a directory 
+	    tree by walking the tree either top-down or bottom-up. For each 
+	    directory in the tree rooted at directory top (including top itself), 
+	    it yields a 3-tuple (dirpath, dirnames, filenames).
+	    """
+	    file_paths = []  # List which will store all of the full filepaths.
+
+	    # Walk the tree.
+	    for root, directories, files in os.walk(directory):
+	        for filename in files:
+	            # Join the two strings in order to form the full filepath.
+	            filepath = os.path.join(root, filename)
+	            file_paths.append(filepath)  # Add it to the list.
+
+	    return file_paths  # Self-explanatory.
+
+	def _hash_file(file_path):
 		try:
-			conn = mysql.connector.connect(user=info['database_user'], password=info['database_password'],
-				host=info['database_host'], database=info['database_name'])
-			cur = conn.cursor()
-			cur.execute('')
+			f = open(file_path, 'rb')
+			data_string = f.read()
+		except:
+			return None
+		finally:
+			f.close()
+		sha1 = _hash_string(data_string)
+		return sha1
 
-		except mysql.connector.Error as err:
-			if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
-				log.error("Access denied to database.")
-			elif err.errno == errorcode.ER_BAD_DB_ERROR:
-				log.error("Database does not exist.")
+	def _hash_string(data):
+		from hashlib import sha1
+		file_sha1 = sha1()
+		file_sha1.update(data)
+		return file_sha1.hexdigest()
+
+	def _file_in_database(self, sha1):
+		import mysql, json
+		logger.info("Querying database")
+		# procedure is something like select * from packages where package_checksum = package_cs
+		con = mysql.connector.connect(user=info['database_user'], password=info['database_password'], 
+			host=['database_host'], database=['database_name'])
+		with con:
+			logger.debug("Connection succeeded, querying")
+			cur = con.cursor()
+			logger.debug("Query: SELECT * FROM " + table + " WHERE " + my_type + "_checksum = " + package_cs)
+			# TODO: Change this to be a stored procedure or at least to a prepared statement.
+			cur.execute("SELECT * FROM packages WHERE package_checksum = " + sha1)
+			rows = cur.fetchall()
+			con.close()
+			if rows:
+				return True
 			else:
-				log.error(str(err))
-			exit()
-		else:	
-			conn.close()
+				return None
 
-	def _write_cached_spdx(self, sstatefile, ver_code, files):
-	
-	def _setup_foss_scan(self, cache, cached_files):
-
-	def _remove_dir_tree(self, dir_name):
-
-	def _remove_file(self, file_name):
-
-	def _list_files(self, dir):
-
-	def _hash_file(self, file_name):
-		try:
-        	f = open( file_name, 'rb' )
-        	data_string = f.read()
-    	except:
-        	return None
-    	finally:
-        	f.close()
-    	sha1 = hash_string( data_string )
-    	return sha1
-
-	def _hash_string(self, data):
-		import hashlib
-		sha1 = hashlib.sha1()
-		sha1.update(data)
-		return sha1.hexdigest()
-
-	def _run_fossology(self, foss_command):
-
-	def _create_spdx_doc(self, file_info, scanned_files):
-
-	def _get_ver_code(self, dirname):
+	def _create_manifest(self, header, files):
+		'''
+		Create the manifest containing the license information returned
+		from the scanner(s). The manifest is output to the outfile provided
+		by the user, stdout if none is provided. The header 
+		'''
+	    with open(info['outfile'], 'w') as f:
+        f.write(header + '\n')
+        for chksum, block in files.iteritems():
+            for key, value in block.iteritems():
+                f.write(key + ": " + value)
+                f.write('\n')
+            f.write('\n')
 
 	def _get_header_info(self, spdx_verification_code, spdx_files):
+		 """
+        Put together the header SPDX information.
+        Eventually this needs to become a lot less
+        of a hardcoded thing.
+		"""
+		from datetime import datetime
+		import os
+		head = []
+		DEFAULT = "NOASSERTION"
+
+		#spdx_verification_code = get_ver_code( info['sourcedir'] )
+		package_checksum = ''
+		if os.path.exists(info['tar_file']):
+		    package_checksum = hash_file( info['tar_file'] )
+		else:
+		    package_checksum = DEFAULT
+
+		## document level information
+		head.append("SPDXVersion: " + info['spdx_version'])
+		head.append("DataLicense: " + info['data_license'])
+		head.append("DocumentComment: <text>SPDX for "
+		    + info['pn'] + " version " + info['pv'] + "</text>")
+		head.append("")
+
+		## Creator information
+		now = datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
+		head.append("## Creation Information")
+		head.append("Creator: fossology-spdx")
+		head.append("Created: " + now)
+		head.append("CreatorComment: <text>UNO</text>")
+		head.append("")
+
+		## package level information
+		head.append("## Package Information")
+		head.append("PackageName: " + info['pn'])
+		head.append("PackageVersion: " + info['pv'])
+		head.append("PackageDownloadLocation: " + DEFAULT)
+		head.append("PackageSummary: <text></text>")
+		head.append("PackageFileName: " + os.path.basename(info['tar_file']))
+		head.append("PackageSupplier: Person:" + DEFAULT)
+		head.append("PackageOriginator: Person:" + DEFAULT)
+		head.append("PackageChecksum: SHA1: " + package_checksum)
+		head.append("PackageVerificationCode: " + spdx_verification_code)
+		head.append("PackageDescription: <text>" + info['pn']
+		    + " version " + info['pv'] + "</text>")
+		head.append("")
+		head.append("PackageCopyrightText: <text>" + DEFAULT + "</text>")
+		head.append("")
+		head.append("PackageLicenseDeclared: " + DEFAULT)
+		head.append("PackageLicenseConcluded: " + DEFAULT)
+		head.append("PackageLicenseInfoFromFiles: " + DEFAULT)
+		head.append("")
+
+		## header for file level
+		head.append("## File Information")
+		head.append("")
+
+		return '\n'.join(head)
 
 class InvalidFileExtensionException(Exception):
 	'''This custom Exception is used when the user provides the wrong file type.'''
