@@ -185,7 +185,7 @@ class DoSpdx():
             f.write('\n')
 
 	def _get_header_info(self, spdx_verification_code, spdx_files):
-		 """
+		"""
         Put together the header SPDX information.
         Eventually this needs to become a lot less
         of a hardcoded thing.
@@ -251,12 +251,11 @@ class InvalidFileExtensionException(Exception):
 	def __str__(self):
 		return repr(self.value)
 
-
+# Only run run_do_spdx if the module was called from command line
 if __name__ = '__main__':
 	run_do_spdx()
 		
 def run_do_spdx():
-	'''Run the do_spdx process from the command line. '''
 	from argparse import ArgumentParser
 	from ConfigParser import ConfigParser
 	from sys import exit
