@@ -186,9 +186,9 @@ class DoSpdx():
 
 	def _get_header_info(self, spdx_verification_code, spdx_files):
 		"""
-        Put together the header SPDX information.
-        Eventually this needs to become a lot less
-        of a hardcoded thing.
+		Put together the header SPDX information.
+		Eventually this needs to become a lot less
+		of a hardcoded thing.
 		"""
 		from datetime import datetime
 		import os
