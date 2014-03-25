@@ -40,6 +40,8 @@ Installation
 
 To install Do_SPDX, clone [this](https://github.com/chaughawout/Do_SPDX) git repo. Everything should be ready to go from there!
 
+For detailed use cases, a command line installation use case can be found [here] (https://github.com/chaughawout/Do_SPDX/blob/master/documentation/use%20cases/Command%20line%20install.md) and installing for use within a project can be found [here] ((https://github.com/chaughawout/Do_SPDX/blob/master/documentation/use%20cases/Instantiation%20install.md))
+
 Usage
 -----
 
@@ -53,6 +55,8 @@ or
 `python do_spdx.py mypackage.tar.gz -o -f /example/output/path.txt -a "John Smith" -t Fossology -pn "Apache" -pv 3 -sv 1.2 -d "MIT" -sd "/example/tmp/path"`
 
 Obviously it is much nicer to use the configuration file over the raw command line interface. There are more plans in the work to expand upon the options in the configuration file, such as database parameters, scanner parameters, etc. This README will be updated as these are implemented.
+
+For detailed use cases, a command line execution use cases can be found [here] (https://github.com/chaughawout/Do_SPDX/blob/master/documentation/use%20cases/Run%20from%20command%20line.md) and an instantiation execution use case can be found [here] ((https://github.com/chaughawout/Do_SPDX/blob/master/documentation/use%20cases/Run%20from%20instantiated%20object.md))
 
 Communities of Interest
 -----------------------
