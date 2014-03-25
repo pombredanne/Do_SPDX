@@ -35,14 +35,14 @@ System Design
 
 To follow Unix standards, all output will be assumed to go to stdout unless output is clarified in the configuration file they provide.
 
-An image showing a data flow diagram (DFD) of this module can be found [here] (https://github.com/chaughawout/Do_SPDX/blob/master/img/DFD.jpg). The decomposition for this DFD can be found [here] (https://github.com/chaughawout/Do_SPDX/blob/master/documentation/dfd/DFD.txt).
+An image showing a data flow diagram (DFD) of this module can be found [here] (https://github.com/chaughawout/Do_SPDX/blob/master/img/DFD.jpg "do_spdx DFD"). The decomposition for this DFD can be found [here] (https://github.com/chaughawout/Do_SPDX/blob/master/documentation/dfd/DFD.txt "DFD Decomposition").
 
 Installation
 ------------  
 
 To install Do_SPDX, clone [this](https://github.com/chaughawout/Do_SPDX) git repo. Everything should be ready to go from there!
 
-For detailed use cases, a command line installation use case can be found [here] (https://github.com/chaughawout/Do_SPDX/blob/master/documentation/use%20cases/Command%20line%20install.md) and installing for use within a project can be found [here] (https://github.com/chaughawout/Do_SPDX/blob/master/documentation/use%20cases/Instantiation%20install.md).
+For detailed use cases, a command line installation use case can be found [here] (https://github.com/chaughawout/Do_SPDX/blob/master/documentation/use%20cases/Command%20line%20install.md "Command line install use case") and installing for use within a project can be found [here] (https://github.com/chaughawout/Do_SPDX/blob/master/documentation/use%20cases/Instantiation%20install.md "Instantiation install use case").
 
 Usage
 -----
@@ -58,7 +58,7 @@ or
 
 Obviously it is much nicer to use the configuration file over the raw command line interface. There are more plans in the work to expand upon the options in the configuration file, such as database parameters, scanner parameters, etc. This README will be updated as these are implemented.
 
-For detailed use cases, a command line execution use cases can be found [here] (https://github.com/chaughawout/Do_SPDX/blob/master/documentation/use%20cases/Run%20from%20command%20line.md) and an instantiation execution use case can be found [here] (https://github.com/chaughawout/Do_SPDX/blob/master/documentation/use%20cases/Run%20from%20instantiated%20object.md).
+For detailed use cases, a command line execution use cases can be found [here] (https://github.com/chaughawout/Do_SPDX/blob/master/documentation/use%20cases/Run%20from%20command%20line.md "Command line execution use case") and an instantiation execution use case can be found [here] (https://github.com/chaughawout/Do_SPDX/blob/master/documentation/use%20cases/Run%20from%20instantiated%20object.md "Instantiation execution use case").
 
 Communities of Interest
 -----------------------
@@ -68,7 +68,7 @@ This project is most closely involved with the SPDX community but is open to any
 Communication
 -------------
 
-To contribute to this project, please Fork this repo and begin making pull-requests. Any bugs should be reported to this repository's bug tracker so that a developer can pick it up and starting implementing a fix. You should contact the owner at `corbin.haughawout@gmail.com` if you find a potentially devestating problem.
+To contribute to this project, please Fork this repo and begin making pull-requests. Any bugs should be reported to this repository's bug tracker so that a developer can pick it up and starting implementing a fix. You should contact the owner at `corbin.haughawout@gmail.com` if you find a potentially devastating problem.
 
 Code Management
 ---------------
@@ -79,12 +79,12 @@ Source will be released in iterative cycles, with milestones set up by priority.
 2. System critical feature additions
    Features that are required for the software to execute, i.e. a command line parser, or a database configuration process.
 3. Non system critical bug-fixes
-   An error in the software that results in unexpected behavior or output, i.e. improperly connecting to the database
+   An error in the software that results in unexpected behaviour or output, i.e. improperly connecting to the database
 4. New Feature additions
    New features are sections of code that provide entirely new functionality to the software.
 5. Feature improvements
    As the lowest priority of tasks, users won't often see this rolling out in a version on it's own until the project is mature and well developed. These are improvements to already existing features, i.e. optimizations, re-implementation of existing code so that it is more efficient, cleaner to read, etc.
 
-All changes and tasks should be documented in the issue tracker at the time of completion. Please document any code you are submitting a pull-request for so that it is easier for the community to read and understand what you're addition is doing. 
+All changes and tasks should be documented in the issue tracker at the time of completion. Please document any code you are submitting a pull-request for so that it is easier for the community to read and understand what your addition is doing. 
 
 >Thanks
