@@ -35,6 +35,8 @@ System Design
 
 To follow Unix standards, all output will be assumed to go to stdout unless output is clarified in the configuration file they provide.
 
+An image showing a data flow diagram (DFD) of this module can be found [here] (https://github.com/chaughawout/Do_SPDX/blob/master/img/DFD.jpg). The decomposition for this DFD can be found [here] (https://github.com/chaughawout/Do_SPDX/blob/master/documentation/dfd/DFD.md)
+
 Installation
 ------------  
 
