@@ -76,6 +76,7 @@ Code Management
 ---------------
 
 Source will be released in iterative cycles, with milestones set up by priority. The priority of different tasks fall in this order, from highest to lowest:
+
 1. System critical bug-fixes and Failure in Security
    An error in the runtime or execution of the software that causes the system to fail or a security vulnerability is exposed. System dependent errors and configuration problems do not fall under this category. 
 2. System critical feature additions
