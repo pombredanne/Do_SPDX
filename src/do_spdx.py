@@ -50,8 +50,20 @@ class DoSpdx():
 		'''
 		import os
 		self.info = info
+		# TODO: Handle _validate_configuration
 		_validate_configuration()
+		_init_logging_config()
 		logger.debug("Created DoSpdx obejct with info: " + str(info))
+
+	def _validate_configuration():
+		'''
+		Ensures that the expected required parameters are valid and that users have the required permissions.
+		'''
+
+	def _init_logging_config():
+		'''
+		Initialize the logging for this Do_SPDX module from the configuration file provided.
+		'''
 
 	def do_spdx(self):
 		'''
@@ -59,52 +71,90 @@ class DoSpdx():
 		TODO: Add details on expections of the process and user input,
 		how it validates that input, and what it will output.
 		'''
-		import os, sys, json, tarfile
+		import os, sys, json, tarfile, random
 		logger.info("Starting do_spdx process")
 
+		# Get the hash of the tar file by passing it to the _hash_file function
+		package_hash = _hash_file(info['package'])
+
+		# Check if package is in database
+		if _file_in_database(package_hash):
+			logger.info("Package checksum exists in database")
+			if info['force']:
+				logger.info('Forcing re-scan of package')
+			else:	
+				if info['quiet']:
+					logger.info("Exiting without output")
+					sys.exit(0)
+				else:
+					logger.info("Creating output then terminating")
+					package_files = _get_package_files(package_hash)
+					header = _get_header_info(info, package_hash)
+					_create_manifest(header, package_files, info['quiet'])
+					sys.exit(0)
+
+		# get temporary directory for staging purposes
+		tmpdir = os.path.join(info['spdx_temp_dir'], 'do_spdx')
+
+		if not os.path.exists(tmpdir):
+			os.mkdir(tmpdir)
 
 
-		# check if package is in staging directory
-		install_path = os.path.abspath("../do_spdx/staging/" + info['package'])
 
-		if not os.path.exists(install_path):	# if path does not exist
-			logger.error("Package not in staging directory. Stopping process.")
 
-		# package exists, so extract the package to the staging directory
-		# and sha1 it
-		tar = tarfile.open(install_path, 10240, "r:gz")
-
-		tar.extractall("../do_spdx/staging/")
+		# Unpack to tmpdir
+		tar = tarfile.open(info['package'], 'r:gz')
+		tar.extractall(tmpdir)
 		tar.close()
 
-		# get the package name without .tar.gz extension for hashing
-		extracted = os.path.splitext(info['package'])
+		
 
-		file_hash = _hash_file(extracted)
 
 		# check if package checksum matches a row in database
 		in_database = False
-		file_list = {}
+
 		if not _file_in_database(file_hash):
-			file_list = _setup_foss_scan(extracted)
+			file_list, to_scan_list = _setup_foss_scan(extracted)
 		else:
 			in_database = True
-		
+
+	def _get_package_files(self, package_checksum):
+		import MySQLdb
+		package_files = {}
+
 
 	def _setup_foss_scan(self, file_name):
 		'''
 		Set up the requirements for the fossology scan. Gather all unknown files
 		for scanning and all known files, return both lists.
 		'''
-		import errno, shutil, tarfile, os
+		import os, MySQLdb
 
 		full_file_paths = []
 		# get all files whose checksum does not match in database
 		# then send to fossology for scanning
 		full_file_paths = _get_filepaths(file_name)
-		checksums = _get_checksums_for_list(full_file_paths)
+		file_checksums = _get_checksums_for_list(full_file_paths)
+		checksums = []
+		for key in file_checksums.keys():
+			checksums.append(file_checksums[key])
 
 
+		# use checksums in query and construct two lists,
+		# one containing files to scan, the other files that
+		# are in database
+		no_scan, to_scan = [], []
+		con = mysql.connector.connect(user=info['database_user'], password=info['database_password'], 
+			host=['database_host'], database=['database_name'])
+		with con:
+			cur = con.cursor()
+			sql = "SELECT * FROM package_files WHERE file_checksum in (%s)"
+			in_p = ', '.join(map(lambda x: '%s', checksums))
+			sql = sql % in_p
+			cur.execute(sql, checksums)
+			rows = cur.fetchall()
+			for path, checksum in file_checksums.items():
+				if checksum 
 
 	def _get_checksums_for_list(files):
 		'''
@@ -132,9 +182,15 @@ class DoSpdx():
 		        filepath = os.path.join(root, filename)
 		        file_paths.append(filepath)  # Add it to the list.
 
-		return file_paths  # Self-explanatory.
+		return file_paths  
 
 	def _hash_file(file_path):
+		'''
+		A location independent checksum generator that generates a sha1
+		of the contents of the file provided. Used in Do_SPDX to 
+		provide a so-called PackageVerificationCode so that the user
+		may detect if a package already has SPDX generated for it.
+		'''
 		try:
 			f = open(file_path, 'rb')
 			data_string = f.read()
@@ -146,16 +202,23 @@ class DoSpdx():
 		return sha1
 
 	def _hash_string(data):
+		'''
+		This hashing function accepts some data as a string and runs it through the sha1
+		hashing algorithm. Returns the hexdigest of the data to the caller.
+		This function is called from within the private _hash_file method of the Do_SPDX
+		module.
+		'''
 		from hashlib import sha1
 		file_sha1 = sha1()
 		file_sha1.update(data)
 		return file_sha1.hexdigest()
 
 	def _file_in_database(self, sha1):
-		import mysql, json
+		import MySQLdb, json
 		logger.info("Querying database")
+
 		# procedure is something like select * from packages where package_checksum = package_cs
-		con = mysql.connector.connect(user=info['database_user'], password=info['database_password'], 
+		con = mysql.connect(user=info['database_user'], passwd=info['database_password'], 
 			host=['database_host'], database=['database_name'])
 		with con:
 			logger.debug("Connection succeeded, querying")
@@ -170,21 +233,44 @@ class DoSpdx():
 			else:
 				return None
 
-	def _create_manifest(self, header, files):
+	def _create_manifest(self, header, files, quiet):
 		'''
 		Create the manifest containing the license information returned
 		from the scanner(s). The manifest is output to the outfile provided
 		by the user, stdout if none is provided.
 		'''
-	    with open(info['outfile'], 'w') as f:
-	        f.write(header + '\n')
-	        for chksum, block in files.iteritems():
-	            for key, value in block.iteritems():
-	                f.write(key + ": " + value)
-	                f.write('\n')
-	            f.write('\n')
+		from sys import stdout
 
-	def _get_header_info(self, spdx_verification_code, spdx_files):
+		# Construct manifest
+		to_file = header + '\n'
+		for chksum, block in files.iteritems():
+			for key, value in block.iteritems():
+				to_file += key + ": " + value
+				to_file += '\n'
+			to_file += '\n'
+
+		# Only output if quiet is not enabled
+		if not quiet:
+			with open(info['outfile'], 'w') as f:
+				f.write(to_file)
+				if f is not stdout:	# output to command line if not already
+					print to_file
+			# if info['outfile'] is not stdout:
+			#     with open(info['outfile'], 'w') as f:
+			#         f.write(header + '\n')
+			#         print header + "\n"
+			#         for chksum, block in files.iteritems():
+			#             for key, value in block.iteritems():
+			#                 f.write(key + ": " + value)
+			#                 print key + ": " + value
+			#                 f.write('\n')
+			#                 print '\n'
+			#             f.write('\n')
+			#             print '\n'
+
+
+
+	def _get_header_info(self, spdx_verification_code):
 		"""
 		Put together the header SPDX information.
 		Eventually this needs to become a lot less
@@ -244,14 +330,7 @@ class DoSpdx():
 
 		return '\n'.join(head)
 
-class InvalidFileExtensionException(Exception):
-	'''This custom Exception is used when the user provides the wrong file type.'''
-	def __init__(self, value):
-		self.value = value
-	def __str__(self):
-		return repr(self.value)
-
-# Only run run_do_spdx if the module was called from command line
+# Only execute run_do_spdx if the module was called from command line
 if __name__ = '__main__':
 	run_do_spdx()
 		
@@ -259,83 +338,39 @@ def run_do_spdx():
 	from argparse import ArgumentParser
 	from ConfigParser import ConfigParser
 	from sys import exit
-	import os.path, logging
+	import os.path
 
 
-	# set up base parser
+	# Set up base parser
 	parser = ArgumentParser(description='Generate spdx documents for the provided tarfile')
-	parser.add_argument('package', action='append', type=file, help='Create SPDX for this package; must be tar.gz') # required path to tarball
-
-	# set up subparsers
-	subparsers = parser.add_subparsers(title='config method', description='method of configuration')
-	config = subparsers.add_parser('-c', help='using config file')	# subparser for use of a config file
-	config.add_argument('file', type=file, action=append, help='Path to config file')	# path to config file. validate file using ConfigParser
-	
-	options = subparsers.add_parser('-o', dest='', help='using command line options')	# subparser for use of options from command line
-	options.add_argument('-f', '--outfile', action='append', type=file, required=False, help='Output file for SPDX after process is finished')	# path to output
-	options.add_argument('-a', '--author', action='append', type=str, required=True, help='Author name')	# author name
-	options.add_argument('-t', '--tool', action='append', type=str, required=True, help='URL of scanning tool host')	# SPDX version
-	options.add_argument('-pn', '--package_name', action='append', type=str, required=True, help='Package name')
-	options.add_argument('-pv', '--package_version', action='append', type=str, required=True, help='Package version')
-	options.add_argument('-sv', '--spdx_version', action='append', type=str, required=True, help='Which SPDX version to generate')
-	options.add_argument('-d', '--data_license', action='append', type='str', required=True, help='License type')
-	options.add_argument('-sd', '--spdx_temp_dir', action='append', type=file, required=True, help='Temp directory for SPDX generation')
+	parser.add_argument('package', action='append', required=True, type=file, help='Create SPDX for this package') # required, path to package
+	parser.add_argument('cfg', action='append', required=True, type=file, help='Supply a valid configuration file')	# required, path to configuration file
+	parser.add_argument('-q', '--quiet', action='append', required=False, help='Mute the file and stdout output of Do_SPDX')	# optional, quiet output
+	parser.add_argument('-f', '--force', action='append', required=False, help='Force Do_SPDX to scan the package and update the database with its SPDX') # optional, force update
 	args = parser.parse_args()	# get the arguments and parameters as key value pairs in args
 
+	# Start Settings
 	info = {}
-	info['tar_file'] = args['package']
-	if 'file' in vars(args):
-		config_parser = ConfigParser.RawConfigParser()
-		if args['file'].endswith('.cfg'): 
-			config_parser.read(args['file'])
-		else:
-			print "Invalid file extension."
-			exit(1)
-		info['author'] = config_parser.get('Settings', 'author')
-		info['workdir'] = config_parser.get('Settings', 'workdir')
-		info['package_name'] = config_parser.get('Settings', 'package_name')
-		info['package_version'] = config_parser.get('Settings', 'package_version')
-		info['spdx_version'] = config_parser.get('Settings', 'spdx_version')
-		info['outfile'] = config_parser.get('Settings', 'outfile')
-		info['tool'] = config_parser.get('Settings', 'tool')
-		info['spdx_temp_dir'] = config_parser.get('Settings', 'spdx_temp_dir')
-		info['data_license'] = config_parser.get('Settings', 'data_license')
-	else:
-		if args.author
-			info['author'] = args.author
-		elif args.a:
-			info['author'] = args.a
-		info['workdir'] = os.getcwd
-		if args.package_name:
-			info['package_name'] = args.package_name
-		elif args.pn
-			info['package_name'] = args.pn
-		if args.package_version:
-			info['package_version'] = args.package_version
-		elif args.pv:
-			info['package_version'] = args.pv
-		if args.spdx_version:
-			info['spdx_version'] = args.spdx_version
-		elif args.sv:
-			info['spdx_version'] = args.sv
-		if args.outfile:	
-			info['outfile'] = args.outfile
-		elif args.f:
-			info['outfile'] = args.f
-		else:
-			info['outfile'] = ""	# Stdout
-		if args.tool:
-			info['tool'] = args.tool
-		elif args.t:
-			info['tool'] = args.t
-		if args.spdx_temp_dir:
-			info['spdx_temp_dir'] = args.spdx_temp_dir
-		elif args.sd:
-			info['spdx_temp_dir'] = args.sd
-		if args.data_license:
-			info['data_license'] = args.data_license
-		elif args.d:
-			info['data_license'] = args.d
+	info['tar_file'] = args.package
+	info['config_path'] = args.cfg
+	if args.quiet:
+		info['quiet'] = args.quiet
+	configParser = ConfigParser.RawConfigParser()
+	configParser.read(info['config_path'])
+
+	# Getting General Settings for Do_SPDX
+	info['author'] = configParser.get('Settings', 'author')
+	info['spdx_temp_dir'] = configParser.get('Settings', 'spdx_temp_dir')
+	info['spdx_version'] = configParser.get('Settings', 'spdx_version')
+	info['outfile'] = configParser.get('Settings', 'outfile')
+	info['tool'] = configParser.get('Settings', 'tool')
+
+	# Getting Database Settings for Do_SPDX
+	info['database_user'] = configParser.get('Database', 'database_user')
+	info['database_name'] = configParser.get('Database', 'database_name')
+	info['database_host'] = configParser.get('Database', 'database_host')
+	info['database_port'] = configParser.get('Database', 'database_port')
+	info['database_password'] = configParser.get('Database', 'database_password')
 
 	# Get DoSpdx object with supplied parameters
 	mDoSpdx = DoSpdx(info)
