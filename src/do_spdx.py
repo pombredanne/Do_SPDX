@@ -59,11 +59,15 @@ class DoSpdx():
 		'''
 		Ensures that the expected required parameters are valid and that users have the required permissions.
 		'''
+		# TODO Implementation
+		pass
 
 	def _init_logging_config():
 		'''
 		Initialize the logging for this Do_SPDX module from the configuration file provided.
 		'''
+		# TODO Implementation
+		pass
 
 	def do_spdx(self):
 		'''
@@ -119,6 +123,10 @@ class DoSpdx():
 			in_database = True
 
 	def _get_package_files(self, package_checksum):
+		'''
+		Creates a list of files that are different for the package and files that are
+		in the package and valid then returns both lists.
+		'''
 		import MySQLdb
 		package_files = {}
 
@@ -154,7 +162,7 @@ class DoSpdx():
 			cur.execute(sql, checksums)
 			rows = cur.fetchall()
 			for path, checksum in file_checksums.items():
-				if checksum 
+				if checksum # TODO Finish implementation
 
 	def _get_checksums_for_list(files):
 		'''
