@@ -60,13 +60,20 @@ class DoSpdx():
 		Ensures that the expected required parameters are valid and that users have the required permissions.
 		'''
 		# TODO Implementation
+		
 		pass
 
 	def _init_logging_config():
 		'''
 		Initialize the logging for this Do_SPDX module from the configuration file provided.
 		'''
-		# TODO Implementation
+		logging.config.fileConfig('info['config_path']')
+		logger = logging.getLogger('')
+		logger.debug('debug message')
+		logger.info('info message')
+		logger.warn('warn message')
+		logger.error('error message')
+		logger.critical('critical message')
 		pass
 
 	def do_spdx(self):
@@ -348,7 +355,6 @@ def run_do_spdx():
 	from sys import exit
 	import os.path
 
-
 	# Set up base parser
 	parser = ArgumentParser(description='Generate spdx documents for the provided tarfile')
 	parser.add_argument('package', action='append', required=True, type=file, help='Create SPDX for this package') # required, path to package
@@ -378,7 +384,7 @@ def run_do_spdx():
 	info['database_name'] = configParser.get('Database', 'database_name')
 	info['database_host'] = configParser.get('Database', 'database_host')
 	info['database_port'] = configParser.get('Database', 'database_port')
-	info['database_password'] = configParser.get('Database', 'database_password')
+	info['database_password'] = configParser.get('Database', 'database_password')	
 
 	# Get DoSpdx object with supplied parameters
 	mDoSpdx = DoSpdx(info)
