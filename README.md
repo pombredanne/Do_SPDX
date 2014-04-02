@@ -96,6 +96,7 @@ Source will be released in iterative cycles, with milestones set up by priority.
    An error in the runtime or execution of the software that causes the system to fail or a security vulnerability is exposed. System dependent errors and configuration problems do not fall under this category. 
 
 2. __System critical feature additions__
+
    Features that are required for the software to execute, i.e. a command line parser, or a database configuration process.
 
 3. __Non system critical bug-fixes__
