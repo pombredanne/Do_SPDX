@@ -67,6 +67,7 @@ class DoSpdx():
 		Initialize the logging for this Do_SPDX module from the configuration file provided.
 		'''
 		# TODO Implementation
+
 		pass
 
 	def do_spdx(self):
@@ -89,13 +90,13 @@ class DoSpdx():
 			else:	
 				if info['quiet']:
 					logger.info("Exiting without output")
-					sys.exit(0)
+					sys.exit(0)		# Exited quietly
 				else:
 					logger.info("Creating output then terminating")
 					package_files = _get_package_files(package_hash)
 					header = _get_header_info(info, package_hash)
 					_create_manifest(header, package_files, info['quiet'])
-					sys.exit(0)
+					sys.exit(0)		# Exited with output
 
 		# get temporary directory for staging purposes
 		tmpdir = os.path.join(info['spdx_temp_dir'], 'do_spdx')
@@ -103,24 +104,37 @@ class DoSpdx():
 		if not os.path.exists(tmpdir):
 			os.mkdir(tmpdir)
 
-
-
-
 		# Unpack to tmpdir
 		tar = tarfile.open(info['package'], 'r:gz')
 		tar.extractall(tmpdir)
 		tar.close()
 
-		
-
-
-		# check if package checksum matches a row in database
-		in_database = False
+		package_id = _get_package_id(package_checksum)
 
 		if not _file_in_database(file_hash):
-			file_list, to_scan_list = _setup_foss_scan(extracted)
+			to_scan, no_scan = _setup_foss_scan(package_id)
 		else:
 			in_database = True
+
+
+	def _cleanup(self):
+		# TODO clean up the tmp files from the tmp directory
+		pass
+
+	def _get_package_id(self, package_checksum):
+		'''
+		@return the id belonging to the package checksum
+		'''
+
+		import MySQLdb
+		con = mysql.connect(user=info['database_user'], password=info['database_password'], 
+			host=['database_host'], database=['database_name'])
+		with con:
+			cur = con.cursor()
+			sql = "SELECT id from packages WHERE package_checksum == " + package_checksum
+			cur.execute()
+			rows = cur.fetchall()
+			return rows[0]
 
 	def _get_package_files(self, package_checksum):
 		'''
@@ -131,7 +145,7 @@ class DoSpdx():
 		package_files = {}
 
 
-	def _setup_foss_scan(self, file_name):
+	def _setup_foss_scan(self, package_id):
 		'''
 		Set up the requirements for the fossology scan. Gather all unknown files
 		for scanning and all known files, return both lists.
@@ -147,22 +161,21 @@ class DoSpdx():
 		for key in file_checksums.keys():
 			checksums.append(file_checksums[key])
 
-
 		# use checksums in query and construct two lists,
 		# one containing files to scan, the other files that
 		# are in database
 		no_scan, to_scan = [], []
-		con = mysql.connector.connect(user=info['database_user'], password=info['database_password'], 
+		con = mysql.connect(user=info['database_user'], password=info['database_password'], 
 			host=['database_host'], database=['database_name'])
 		with con:
 			cur = con.cursor()
-			sql = "SELECT * FROM package_files WHERE file_checksum in (%s)"
+			sql = "SELECT * FROM doc_file_package_assocations WHERE file_checksum in (%s)"
 			in_p = ', '.join(map(lambda x: '%s', checksums))
 			sql = sql % in_p
 			cur.execute(sql, checksums)
 			rows = cur.fetchall()
 			for path, checksum in file_checksums.items():
-				if checksum # TODO Finish implementation
+				if checksum 
 
 	def _get_checksums_for_list(files):
 		'''
@@ -260,23 +273,10 @@ class DoSpdx():
 		# Only output if quiet is not enabled
 		if not quiet:
 			with open(info['outfile'], 'w') as f:
-				f.write(to_file)
+				f.write(to_file)	# write to file
 				if f is not stdout:	# output to command line if not already
 					print to_file
-			# if info['outfile'] is not stdout:
-			#     with open(info['outfile'], 'w') as f:
-			#         f.write(header + '\n')
-			#         print header + "\n"
-			#         for chksum, block in files.iteritems():
-			#             for key, value in block.iteritems():
-			#                 f.write(key + ": " + value)
-			#                 print key + ": " + value
-			#                 f.write('\n')
-			#                 print '\n'
-			#             f.write('\n')
-			#             print '\n'
-
-
+		# END of _create_manifest()
 
 	def _get_header_info(self, spdx_verification_code):
 		"""
@@ -363,6 +363,8 @@ def run_do_spdx():
 	info['config_path'] = args.cfg
 	if args.quiet:
 		info['quiet'] = args.quiet
+	if args.force:
+		info['force'] = args.force
 	configParser = ConfigParser.RawConfigParser()
 	configParser.read(info['config_path'])
 

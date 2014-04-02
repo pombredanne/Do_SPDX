@@ -26,25 +26,36 @@ Copyright 2014 Corbin Haghawout, Joe Meyer, Ethan Harner under the Apache Licens
 Technical Specs
 ---------------
 
-Assumptions: The user has both mySQL and Python 2.7.6 installed. 
-You can download the Python 2.7.6 installer [here](https://www.python.org/download/releases/2.7.6/ "Python 2.7.6 download").  
-The mySQL installer can be found [here for linux](http://dev.mysql.com/doc/refman/5.1/en/linux-installation.html "MySQL Linux Installation") and [here for windows](http://dev.mysql.com/doc/refman/5.1/en/windows-installation.html "MySQL Windows Installation").
+Assumptions: The user has both MySQL, Python 2.7.6, FOSSology installed. 
+
+You can download the Python 2.7.6 installer [here](https://www.python.org/download/releases/2.7.6/ "Python 2.7.6 download").
+
+The MySQL installer can be found [here for linux](http://dev.mysql.com/doc/refman/5.1/en/linux-installation.html "MySQL Linux Installation") and [here for windows](http://dev.mysql.com/doc/refman/5.1/en/windows-installation.html "MySQL Windows Installation").
+
+FOSSology can be installed by selecting the appropriate OS distribution [here](http://www.fossology.org/projects/fossology/wiki/Install_2_2).
+
+Your system must meet the minimum system requirements of each of the requirements. As a side note, Python has very low runtime requirements, please make sure you have enough hard disk space to install it.
+
 
 System Design
 -------------
 
 To follow Unix standards, all output will be assumed to go to stdout unless output is clarified in the configuration file they provide.
 
-The database will be implemented in mySql, the open source SQL standard. The schema has been provided to the team by Liang Cao, a University of Nebraska graduate student. [Here] (https://github.com/chaughawout/Do_SPDX/blob/master/documentation/database/Database%20Schema.pdf "Database Schema") is the most up-to-date schema.
+The database will be implemented in mySql, the open source SQL standard. The schema has been provided to the team by Liang Cao, a University of Nebraska graduate student. [Here](https://github.com/chaughawout/Do_SPDX/blob/master/documentation/database/Database%20Schema.pdf "Database Schema") is the most up-to-date schema.
 
-An image showing a data flow diagram (DFD) of this module can be found [here] (https://github.com/chaughawout/Do_SPDX/blob/master/img/DFD.jpg "do_spdx DFD"). The decomposition for this DFD can be found [here] (https://github.com/chaughawout/Do_SPDX/blob/master/documentation/dfd/DFD.txt "DFD Decomposition").
+An image showing a data flow diagram (DFD) of this module can be found [here](https://github.com/chaughawout/Do_SPDX/blob/master/img/DFD.jpg "do_spdx DFD"). The decomposition for this DFD can be found [here](https://github.com/chaughawout/Do_SPDX/blob/master/documentation/dfd/DFD.txt "DFD Decomposition").
 
 Installation
 ------------  
 
 To install Do_SPDX, clone [this](https://github.com/chaughawout/Do_SPDX) git repo. Everything should be ready to go from there!
 
-For detailed use cases, a command line installation use case can be found [here] (https://github.com/chaughawout/Do_SPDX/blob/master/documentation/use%20cases/Command%20line%20install.md "Command line install use case") and installing for use within a project can be found [here] (https://github.com/chaughawout/Do_SPDX/blob/master/documentation/use%20cases/Instantiation%20install.md "Instantiation install use case").
+Or
+
+Click the Download ZIP button on the right hand side of the [Do_SPDX](https://github.com/chaughawout/Do_SPDX)repository.
+
+For detailed use cases, a command line installation use case can be found [here](https://github.com/chaughawout/Do_SPDX/blob/master/documentation/use%20cases/Command%20line%20install.md "Command line install use case") and installing for use within a project can be found [here](https://github.com/chaughawout/Do_SPDX/blob/master/documentation/use%20cases/Instantiation%20install.md "Instantiation install use case").
 
 Usage
 -----
