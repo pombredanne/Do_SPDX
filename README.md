@@ -91,11 +91,23 @@ Code Management
 
 Source will be released in iterative cycles, with milestones set up by priority. The priority of different tasks fall in this order, from highest to lowest:
 
-1. System critical bug-fixes and Failure in Security  An error in the runtime or execution of the software that causes the system to fail or a security vulnerability is exposed. System dependent errors and configuration problems do not fall under this category. 
-2. System critical feature additions  Features that are required for the software to execute, i.e. a command line parser, or a database configuration process.
-3. Non system critical bug-fixes  An error in the software that results in unexpected behaviour or output, i.e. improperly connecting to the database
-4. New Feature additions  New features are sections of code that provide entirely new functionality to the software.
-5. Feature improvements  As the lowest priority of tasks, users won't often see this rolling out in a version on it's own until the project is mature and well developed. These are improvements to already existing features, i.e. optimizations, re-implementation of existing code so that it is more efficient, cleaner to read, etc.
+1. System critical bug-fixes and Failure in Security
+
+   An error in the runtime or execution of the software that causes the system to fail or a security vulnerability is exposed. System dependent errors and configuration problems do not fall under this category. 
+
+2. System critical feature additions
+   Features that are required for the software to execute, i.e. a command line parser, or a database configuration process.
+
+3. Non system critical bug-fixes
+   
+   An error in the software that results in unexpected behaviour or output, i.e. improperly connecting to the database
+
+4. New Feature additions
+
+   New features are sections of code that provide entirely new functionality to the software.
+
+5. Feature improvements
+   As the lowest priority of tasks, users won't often see this rolling out in a version on it's own until the project is mature and well developed. These are improvements to already existing features, i.e. optimizations, re-implementation of existing code so that it is more efficient, cleaner to read, etc.
 
 All changes and tasks should be documented in the issue tracker at the time of completion. Please document any code you are submitting a pull-request for so that it is easier for the community to read and understand what your addition is doing. 
 
