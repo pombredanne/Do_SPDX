@@ -116,6 +116,8 @@ class DoSpdx():
 		else:
 			in_database = True
 
+			_cleanup()
+
 
 	def _cleanup(self):
 		# TODO clean up the tmp files from the tmp directory
