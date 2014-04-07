@@ -67,19 +67,13 @@ class DoSpdx():
 		'''
 		Initialize the logging for this Do_SPDX module from the configuration file provided.
 		'''
-<<<<<<< HEAD
-		logging.config.fileConfig('info['config_path']')
-		logger = logging.getLogger('')
+		logging.config.fileConfig(info['config_path'])
+		logger = logging.getLogger()
 		logger.debug('debug message')
 		logger.info('info message')
 		logger.warn('warn message')
 		logger.error('error message')
 		logger.critical('critical message')
-=======
-		# TODO Implementation
-
->>>>>>> master
-		pass
 
 	def do_spdx(self):
 		'''
