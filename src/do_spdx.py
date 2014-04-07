@@ -255,7 +255,31 @@ class DoSpdx():
 				return True
 			else:
 				return None
-
+				
+	def _insert_files_in_database(self, file_info):
+		import MySQLdb, json, time
+		logger.info("Inserting into database")
+		
+		# procedure will insert file information from the scanning utility into the database
+		con = mysql.connect(user=info['database_user'], passwd=info['database_password'], 
+			host=['database_host'], database=['database_name'])
+		with con:
+			logger.debug("Connection succeeded, inserting")
+			cur = cur.cursor()
+			logger.debug("INSERT alot INTO table")
+			for checksum in file_info.keys():
+				info {}
+				info['FileName'] = file_info[checksum]['FileName']
+				info['FileType'] = file_info[checksum]['FileType']
+				info['Checksum'] = checksum
+				info['LicenseInfoInFile'] = file_info[checksum]['LicenseInfoInFile']
+				info['LicenseConcluded'] = file_info[checksum]['LicenseConcluded']
+				info['FileCopyrightText'] = file_info[checksum]['FileCopyrightText']
+				info['Artifact'] = 'NOASSERTION'
+				info['RelativePath'] = 'PUTRELATIVEPATHHERE'
+				info['CheckAlg'] = 'SHA1'
+				cur.execute("INSERT INTO package_files (file_name, file_type, file_copyright_text, artifact_of_project_name, artifact_of_project_homepage, artifact_of_project_url, license_concluded, license_info_in_file, file_checksum, file_checksum_algorithm, relative_path, created_at) VALUES (info['FileName'], info['FileType'], info['FileCopyrightText'], info['Artifact'], info['Artifact'], info['Artifact'], info['LicenseConcluded'], info['LicenseInfoInFile'], info['Checksum'] info['CheckAlg'], info['RelativePath'], time.strftime('%Y-%m-%d %H:%M:%S'))")
+				
 	def _create_manifest(self, header, files, quiet):
 		'''
 		Create the manifest containing the license information returned
