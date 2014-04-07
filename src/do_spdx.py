@@ -159,20 +159,18 @@ class DoSpdx():
 		# then send to fossology for scanning
 		full_file_paths = _get_filepaths(file_name)
 		file_checksums = _get_checksums_for_list(full_file_paths)
-		checksums = []
-		for key in file_checksums.keys():
-			checksums.append(file_checksums[key])
+		checksums = [file_checksums[key] for key in file_checksums.keys()]
 
 		# use checksums in query and construct two lists,
 		# one containing files to scan, the other files that
 		# are in database
-		no_scan, to_scan = [], []
+		no_scan, to_scan = None, None
 		con = mysql.connect(user=info['database_user'], password=info['database_password'], 
 			host=['database_host'], database=['database_name'])
 		with con:
 			cur = con.cursor()
 			sql = "SELECT * FROM doc_file_package_assocations WHERE file_checksum in (%s)"
-			in_p = ', '.join(map(lambda x: '%s', checksums))
+			in_p = ', '.join(map(lambda x: '%s', checksums))	# returns a comma seperated list of checksums
 			sql = sql % in_p
 			cur.execute(sql, checksums)
 			rows = cur.fetchall()
@@ -183,10 +181,7 @@ class DoSpdx():
 		'''
 		Get all sha1's of the staged files.
 		'''
-		checksums = {}
-		for f in full_file_paths:
-			checksums[f] = _hash_file(f)
-
+		checksums = {f:hash_file(f) for f in files}
 		return checksums
 
 	def _get_filepaths(directory):
@@ -257,6 +252,9 @@ class DoSpdx():
 				return None
 				
 	def _insert_files_in_database(self, file_info):
+		'''
+		Inserts file information about the package into the database
+		'''
 		import MySQLdb, json, time
 		logger.info("Inserting into database")
 		
@@ -278,7 +276,12 @@ class DoSpdx():
 				info['Artifact'] = 'NOASSERTION'
 				info['RelativePath'] = 'PUTRELATIVEPATHHERE'
 				info['CheckAlg'] = 'SHA1'
-				cur.execute("INSERT INTO package_files (file_name, file_type, file_copyright_text, artifact_of_project_name, artifact_of_project_homepage, artifact_of_project_url, license_concluded, license_info_in_file, file_checksum, file_checksum_algorithm, relative_path, created_at) VALUES (info['FileName'], info['FileType'], info['FileCopyrightText'], info['Artifact'], info['Artifact'], info['Artifact'], info['LicenseConcluded'], info['LicenseInfoInFile'], info['Checksum'] info['CheckAlg'], info['RelativePath'], time.strftime('%Y-%m-%d %H:%M:%S'))")
+				cur.execute("INSERT INTO package_files (file_name, file_type, file_copyright_text, " + \
+					"artifact_of_project_name, artifact_of_project_homepage, artifact_of_project_url," + \
+					" license_concluded, license_info_in_file, file_checksum, file_checksum_algorithm, relative_path, created_at) " + \
+					"VALUES (info['FileName'], info['FileType'], info['FileCopyrightText'], info['Artifact'], info['Artifact'], info['Artifact']," + \
+					" info['LicenseConcluded'], info['LicenseInfoInFile'], info['Checksum'], "+ \
+					"info['CheckAlg'], info['RelativePath'], time.strftime('%Y-%m-%d %H:%M:%S'))")
 				
 	def _create_manifest(self, header, files, quiet):
 		'''
