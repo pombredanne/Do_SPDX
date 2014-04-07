@@ -1,7 +1,7 @@
 Do_SPDX
 =======
 
-A configurable SPDX generator module for python.
+A configurable, Free, and Open Source SPDX generator module in Python.
 
 Overview
 --------
@@ -26,25 +26,36 @@ Copyright 2014 Corbin Haghawout, Joe Meyer, Ethan Harner under the Apache Licens
 Technical Specs
 ---------------
 
-Assumptions: The user has both mySQL and Python 2.7.6 installed. 
-You can download the Python 2.7.6 installer [here](https://www.python.org/download/releases/2.7.6/ "Python 2.7.6 download").  
-The mySQL installer can be found [here for linux](http://dev.mysql.com/doc/refman/5.1/en/linux-installation.html "MySQL Linux Installation") and [here for windows](http://dev.mysql.com/doc/refman/5.1/en/windows-installation.html "MySQL Windows Installation").
+Assumptions: The user has both MySQL, Python 2.7.6, FOSSology installed. 
+
+You can download the Python 2.7.6 installer [here](https://www.python.org/download/releases/2.7.6/ "Python 2.7.6 download").
+
+The MySQL installer can be found [here for linux](http://dev.mysql.com/doc/refman/5.1/en/linux-installation.html "MySQL Linux Installation") and [here for windows](http://dev.mysql.com/doc/refman/5.1/en/windows-installation.html "MySQL Windows Installation").
+
+FOSSology can be installed by selecting the appropriate OS distribution [here](http://www.fossology.org/projects/fossology/wiki/Install_2_2).
+
+Your system must meet the minimum system requirements of each of the requirements. As a side note, Python has very low runtime requirements, please make sure you have enough hard disk space to install it.
+
 
 System Design
 -------------
 
-To follow Unix standards, all output will be assumed to go to stdout unless output is clarified in the configuration file they provide.
+To follow Unix standards, all output will to stdout. An output file must also be provided in the configuration file.
 
-The database will be implemented in mySql, the open source SQL standard. The schema has been provided to the team by Liang Cao, a University of Nebraska graduate student. [Here] (https://github.com/chaughawout/Do_SPDX/blob/master/documentation/database/Database%20Schema.pdf "Database Schema") is the most up-to-date schema.
+The database will be implemented in mySql, the open source SQL standard. The schema has been provided to the team by Liang Cao, a University of Nebraska graduate student. [Here](https://github.com/chaughawout/Do_SPDX/blob/master/documentation/database/Database%20Schema.pdf "Database Schema") is the most up-to-date schema.
 
-An image showing a data flow diagram (DFD) of this module can be found [here] (https://github.com/chaughawout/Do_SPDX/blob/master/img/DFD.jpg "do_spdx DFD"). The decomposition for this DFD can be found [here] (https://github.com/chaughawout/Do_SPDX/blob/master/documentation/dfd/DFD.txt "DFD Decomposition").
+An image showing a data flow diagram (DFD) of this module can be found [here](https://github.com/chaughawout/Do_SPDX/blob/master/img/DFD.jpg "do_spdx DFD"). The decomposition for this DFD can be found [here](https://github.com/chaughawout/Do_SPDX/blob/master/documentation/dfd/DFD.txt "DFD Decomposition").
 
 Installation
 ------------  
 
 To install Do_SPDX, clone [this](https://github.com/chaughawout/Do_SPDX) git repo. Everything should be ready to go from there!
 
-For detailed use cases, a command line installation use case can be found [here] (https://github.com/chaughawout/Do_SPDX/blob/master/documentation/use%20cases/Command%20line%20install.md "Command line install use case") and installing for use within a project can be found [here] (https://github.com/chaughawout/Do_SPDX/blob/master/documentation/use%20cases/Instantiation%20install.md "Instantiation install use case").
+*__Or__*
+
+Click the Download ZIP button on the right hand side of the [Do_SPDX](https://github.com/chaughawout/Do_SPDX)repository.
+
+For detailed use cases, a command line installation use case can be found [here](https://github.com/chaughawout/Do_SPDX/blob/master/documentation/use%20cases/Command%20line%20install.md "Command line install use case") and installing for use within a project can be found [here](https://github.com/chaughawout/Do_SPDX/blob/master/documentation/use%20cases/Instantiation%20install.md "Instantiation install use case").
 
 Usage
 -----
@@ -55,10 +66,16 @@ The do_spdx.cfg file contains the current required arguments and their types und
 
 To run Do_SPDX, simply execute it with python, e.g.:  
 `python do_spdx.py mypackage.tar.gz -c do_spdx.cfg`  
-or  
-`python do_spdx.py mypackage.tar.gz -o -f /example/output/path.txt -a "John Smith" -t Fossology -pn "Apache" -pv 3 -sv 1.2 -d "MIT" -sd "/example/tmp/path"`
 
-Obviously it is much nicer to use the configuration file over the raw command line interface. There are more plans in the work to expand upon the options in the configuration file, such as database parameters, scanner parameters, etc. This README will be updated as these are implemented.
+You can also run it quietly by calling it like this:  
+`python do_spdx.py mypackage.tar.gz -c do_spdx.cfg -q`
+
+Quiet mode disables all file and console output generated by Do_SPDX.
+
+As SPDX consumers, you may wish to force a re-scan of an existing package if you don't trust the scanning device's reported license information. The force option allows you to overwrite the existing license information in the database. __WARNING This will remove any existing license information which may result in irreversible information loss. Use at your own risk.__
+
+You can run forced mode like this:  
+`python do_spdx.py mypackage.tar.gz -c do_spdx.cfg -f`
 
 For detailed use cases, a command line execution use cases can be found [here] (https://github.com/chaughawout/Do_SPDX/blob/master/documentation/use%20cases/Run%20from%20command%20line.md "Command line execution use case") and an instantiation execution use case can be found [here] (https://github.com/chaughawout/Do_SPDX/blob/master/documentation/use%20cases/Run%20from%20instantiated%20object.md "Instantiation execution use case").
 
@@ -77,17 +94,27 @@ Code Management
 
 Source will be released in iterative cycles, with milestones set up by priority. The priority of different tasks fall in this order, from highest to lowest:
 
-1. System critical bug-fixes and Failure in Security
+1. __System critical bug-fixes and Failure in Security__
+
    An error in the runtime or execution of the software that causes the system to fail or a security vulnerability is exposed. System dependent errors and configuration problems do not fall under this category. 
-2. System critical feature additions
+
+2. __System critical feature additions__
+
    Features that are required for the software to execute, i.e. a command line parser, or a database configuration process.
-3. Non system critical bug-fixes
+
+3. __Non system critical bug-fixes__
+   
    An error in the software that results in unexpected behaviour or output, i.e. improperly connecting to the database
-4. New Feature additions
+
+4. __New Feature additions__
+
    New features are sections of code that provide entirely new functionality to the software.
-5. Feature improvements
+
+5. __Feature improvements__
+
    As the lowest priority of tasks, users won't often see this rolling out in a version on it's own until the project is mature and well developed. These are improvements to already existing features, i.e. optimizations, re-implementation of existing code so that it is more efficient, cleaner to read, etc.
 
 All changes and tasks should be documented in the issue tracker at the time of completion. Please document any code you are submitting a pull-request for so that it is easier for the community to read and understand what your addition is doing. 
 
+-------
 >Thanks

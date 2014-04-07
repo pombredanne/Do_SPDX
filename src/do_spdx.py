@@ -67,6 +67,7 @@ class DoSpdx():
 		'''
 		Initialize the logging for this Do_SPDX module from the configuration file provided.
 		'''
+<<<<<<< HEAD
 		logging.config.fileConfig('info['config_path']')
 		logger = logging.getLogger('')
 		logger.debug('debug message')
@@ -74,6 +75,10 @@ class DoSpdx():
 		logger.warn('warn message')
 		logger.error('error message')
 		logger.critical('critical message')
+=======
+		# TODO Implementation
+
+>>>>>>> master
 		pass
 
 	def do_spdx(self):
@@ -96,13 +101,13 @@ class DoSpdx():
 			else:	
 				if info['quiet']:
 					logger.info("Exiting without output")
-					sys.exit(0)
+					sys.exit(0)		# Exited quietly
 				else:
 					logger.info("Creating output then terminating")
 					package_files = _get_package_files(package_hash)
 					header = _get_header_info(info, package_hash)
 					_create_manifest(header, package_files, info['quiet'])
-					sys.exit(0)
+					sys.exit(0)		# Exited with output
 
 		# get temporary directory for staging purposes
 		tmpdir = os.path.join(info['spdx_temp_dir'], 'do_spdx')
@@ -110,24 +115,39 @@ class DoSpdx():
 		if not os.path.exists(tmpdir):
 			os.mkdir(tmpdir)
 
-
-
-
 		# Unpack to tmpdir
 		tar = tarfile.open(info['package'], 'r:gz')
 		tar.extractall(tmpdir)
 		tar.close()
 
-		
-
-
-		# check if package checksum matches a row in database
-		in_database = False
+		package_id = _get_package_id(package_checksum)
 
 		if not _file_in_database(file_hash):
-			file_list, to_scan_list = _setup_foss_scan(extracted)
+			to_scan, no_scan = _setup_foss_scan(package_id)
 		else:
 			in_database = True
+
+			_cleanup()
+
+
+	def _cleanup(self):
+		# TODO clean up the tmp files from the tmp directory
+		pass
+
+	def _get_package_id(self, package_checksum):
+		'''
+		@return the id belonging to the package checksum
+		'''
+
+		import MySQLdb
+		con = mysql.connect(user=info['database_user'], password=info['database_password'], 
+			host=['database_host'], database=['database_name'])
+		with con:
+			cur = con.cursor()
+			sql = "SELECT id from packages WHERE package_checksum == " + package_checksum
+			cur.execute()
+			rows = cur.fetchall()
+			return rows[0]
 
 	def _get_package_files(self, package_checksum):
 		'''
@@ -138,7 +158,7 @@ class DoSpdx():
 		package_files = {}
 
 
-	def _setup_foss_scan(self, file_name):
+	def _setup_foss_scan(self, package_id):
 		'''
 		Set up the requirements for the fossology scan. Gather all unknown files
 		for scanning and all known files, return both lists.
@@ -150,35 +170,29 @@ class DoSpdx():
 		# then send to fossology for scanning
 		full_file_paths = _get_filepaths(file_name)
 		file_checksums = _get_checksums_for_list(full_file_paths)
-		checksums = []
-		for key in file_checksums.keys():
-			checksums.append(file_checksums[key])
-
+		checksums = [file_checksums[key] for key in file_checksums.keys()]
 
 		# use checksums in query and construct two lists,
 		# one containing files to scan, the other files that
 		# are in database
-		no_scan, to_scan = [], []
-		con = mysql.connector.connect(user=info['database_user'], password=info['database_password'], 
+		no_scan, to_scan = None, None
+		con = mysql.connect(user=info['database_user'], password=info['database_password'], 
 			host=['database_host'], database=['database_name'])
 		with con:
 			cur = con.cursor()
-			sql = "SELECT * FROM package_files WHERE file_checksum in (%s)"
-			in_p = ', '.join(map(lambda x: '%s', checksums))
+			sql = "SELECT * FROM doc_file_package_assocations WHERE file_checksum in (%s)"
+			in_p = ', '.join(map(lambda x: '%s', checksums))	# returns a comma seperated list of checksums
 			sql = sql % in_p
 			cur.execute(sql, checksums)
 			rows = cur.fetchall()
 			for path, checksum in file_checksums.items():
-				if checksum # TODO Finish implementation
+				if checksum 
 
 	def _get_checksums_for_list(files):
 		'''
 		Get all sha1's of the staged files.
 		'''
-		checksums = {}
-		for f in full_file_paths:
-			checksums[f] = _hash_file(f)
-
+		checksums = {f:hash_file(f) for f in files}
 		return checksums
 
 	def _get_filepaths(directory):
@@ -247,7 +261,39 @@ class DoSpdx():
 				return True
 			else:
 				return None
-
+				
+	def _insert_files_in_database(self, file_info):
+		'''
+		Inserts file information about the package into the database
+		'''
+		import MySQLdb, json, time
+		logger.info("Inserting into database")
+		
+		# procedure will insert file information from the scanning utility into the database
+		con = mysql.connect(user=info['database_user'], passwd=info['database_password'], 
+			host=['database_host'], database=['database_name'])
+		with con:
+			logger.debug("Connection succeeded, inserting")
+			cur = cur.cursor()
+			logger.debug("INSERT alot INTO table")
+			for checksum in file_info.keys():
+				info {}
+				info['FileName'] = file_info[checksum]['FileName']
+				info['FileType'] = file_info[checksum]['FileType']
+				info['Checksum'] = checksum
+				info['LicenseInfoInFile'] = file_info[checksum]['LicenseInfoInFile']
+				info['LicenseConcluded'] = file_info[checksum]['LicenseConcluded']
+				info['FileCopyrightText'] = file_info[checksum]['FileCopyrightText']
+				info['Artifact'] = 'NOASSERTION'
+				info['RelativePath'] = 'PUTRELATIVEPATHHERE'
+				info['CheckAlg'] = 'SHA1'
+				cur.execute("INSERT INTO package_files (file_name, file_type, file_copyright_text, " + \
+					"artifact_of_project_name, artifact_of_project_homepage, artifact_of_project_url," + \
+					" license_concluded, license_info_in_file, file_checksum, file_checksum_algorithm, relative_path, created_at) " + \
+					"VALUES (info['FileName'], info['FileType'], info['FileCopyrightText'], info['Artifact'], info['Artifact'], info['Artifact']," + \
+					" info['LicenseConcluded'], info['LicenseInfoInFile'], info['Checksum'], "+ \
+					"info['CheckAlg'], info['RelativePath'], time.strftime('%Y-%m-%d %H:%M:%S'))")
+				
 	def _create_manifest(self, header, files, quiet):
 		'''
 		Create the manifest containing the license information returned
@@ -267,23 +313,10 @@ class DoSpdx():
 		# Only output if quiet is not enabled
 		if not quiet:
 			with open(info['outfile'], 'w') as f:
-				f.write(to_file)
+				f.write(to_file)	# write to file
 				if f is not stdout:	# output to command line if not already
 					print to_file
-			# if info['outfile'] is not stdout:
-			#     with open(info['outfile'], 'w') as f:
-			#         f.write(header + '\n')
-			#         print header + "\n"
-			#         for chksum, block in files.iteritems():
-			#             for key, value in block.iteritems():
-			#                 f.write(key + ": " + value)
-			#                 print key + ": " + value
-			#                 f.write('\n')
-			#                 print '\n'
-			#             f.write('\n')
-			#             print '\n'
-
-
+		# END of _create_manifest()
 
 	def _get_header_info(self, spdx_verification_code):
 		"""
@@ -369,6 +402,8 @@ def run_do_spdx():
 	info['config_path'] = args.cfg
 	if args.quiet:
 		info['quiet'] = args.quiet
+	if args.force:
+		info['force'] = args.force
 	configParser = ConfigParser.RawConfigParser()
 	configParser.read(info['config_path'])
 
