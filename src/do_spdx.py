@@ -55,7 +55,7 @@ class DoSpdx():
 		_init_logging_config()
 		logger.debug("Created DoSpdx obejct with info: " + str(info))
 
-	def _validate_configuration():
+	def _validate_configuration(self):
 		'''
 		Ensures that the expected required parameters are valid and that users have the required permissions.
 		'''
@@ -63,17 +63,14 @@ class DoSpdx():
 		
 		pass
 
-	def _init_logging_config():
+	def _init_logging_config(self):
 		'''
 		Initialize the logging for this Do_SPDX module from the configuration file provided.
 		'''
+		import datetime
 		logging.config.fileConfig(info['config_path'])
 		logger = logging.getLogger()
-		logger.debug('debug message')
-		logger.info('info message')
-		logger.warn('warn message')
-		logger.error('error message')
-		logger.critical('critical message')
+		logger.debug("Logger initialized for Do_SPDX process @" + datetime.utcnow()
 
 	def do_spdx(self):
 		'''
@@ -109,22 +106,70 @@ class DoSpdx():
 		if not os.path.exists(tmpdir):
 			os.mkdir(tmpdir)
 
+		unpacked_package_location = None
 		# Unpack to tmpdir
-		tar = tarfile.open(info['package'], 'r:gz')
-		tar.extractall(tmpdir)
-		tar.close()
+		with tarfile.open(info['package'], 'r:gz') as tar
+			tar.extractall(tmpdir)
+			unpacked_package_location = os.path.splitext(info['package'])
+			
+		# check if package checksum is in database and return id if it is
 
 		package_id = _get_package_id(package_checksum)
-
-		if not _file_in_database(file_hash):
-			to_scan, no_scan = _setup_foss_scan(package_id)
+		not_matched, matched = list(), list()
+		if package_id:
+			not_matched, matched = _get_package_files(package_id, unpacked_package_location)
 		else:
-			in_database = True
+			for root, dirs, files in os.walk(unpacked_package_location):
+				not_matched = files
+
+		foss_server = info['foss_server']
+		foss_command = "wget %s --post-file=%s %s"\
+			% (info['fossology_flags'], not_matched, info['fossology_server'])
+
+		foss_file_info =_run_fossology(foss_command)
+
+		spdx_file_info = _create_spdx_doc(matched, foss_file_info)
+
+
+
+		# if not _file_in_database(file_hash):
+		# 	to_scan, no_scan = _setup_foss_scan(package_id)
+		# else:
+		# 	in_database = True
 
 			_cleanup()
 
 
+	def _run_fossology(self, command):
+		'''
+		Creates a subprocess and executes the fossology command and returns the
+		license information of each file passed to Fossology in a single list.
+		'''
+		import string, re, subprocess
+
+		p = subprocess.Popen(command.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+		foss_output, foss_error = p.communicate()
+
+		records = re.findall('FileName:.*?</text>', foss_output, re.S)	# a list
+
+		file_info = {}
+		for rec in records:
+	        rec = string.replace( rec, '\r', '' )
+	        chksum = re.findall( 'FileChecksum: SHA1: (.*)\n', rec)[0]
+	        file_info[chksum] = {}
+	        file_info[chksum]['FileCopyrightText'] = re.findall( 'FileCopyrightText: '
+	            + '(.*?</text>)', rec, re.S )[0]
+	        fields = ['FileType','LicenseConcluded',
+	            'LicenseInfoInFile','FileName']
+	        for field in fields:
+	            file_info[chksum][field] = re.findall(field + ': (.*)', rec)[0]
+
+	    return file_info
+
 	def _cleanup(self):
+		'''
+		Remove all contents of spdx_temp_dir and close any open resources
+		'''
 		# TODO clean up the tmp files from the tmp directory
 		pass
 
@@ -141,55 +186,46 @@ class DoSpdx():
 			sql = "SELECT id from packages WHERE package_checksum == " + package_checksum
 			cur.execute()
 			rows = cur.fetchall()
-			return rows[0]
+			if rows is not None:	# query returned a package whose checksum matches
+				return rows[0]
+			else:
+				return False
 
-	def _get_package_files(self, package_checksum):
+	def _get_package_files(self, package_id, unpacked_package_location):
 		'''
 		Creates a list of files that are different for the package and files that are
 		in the package and valid then returns both lists.
 		'''
-		import MySQLdb
-		package_files = {}
-
-
-	def _setup_foss_scan(self, package_id):
-		'''
-		Set up the requirements for the fossology scan. Gather all unknown files
-		for scanning and all known files, return both lists.
-		'''
-		import os, MySQLdb
-
-		full_file_paths = []
-		# get all files whose checksum does not match in database
-		# then send to fossology for scanning
-		full_file_paths = _get_filepaths(file_name)
-		file_checksums = _get_checksums_for_list(full_file_paths)
-		checksums = [file_checksums[key] for key in file_checksums.keys()]
-
-		# use checksums in query and construct two lists,
-		# one containing files to scan, the other files that
-		# are in database
-		no_scan, to_scan = None, None
-		con = mysql.connect(user=info['database_user'], password=info['database_password'], 
-			host=['database_host'], database=['database_name'])
+		import MySQLdb, os.path, os.walk
+		con = mysql.connect(user=info['database_user'], password=info['database_password'],
+			host=info['database_host'], database=['database_name'])
 		with con:
 			cur = con.cursor()
-			sql = "SELECT * FROM doc_file_package_assocations WHERE file_checksum in (%s)"
-			in_p = ', '.join(map(lambda x: '%s', checksums))	# returns a comma seperated list of checksums
-			sql = sql % in_p
-			cur.execute(sql, checksums)
-			rows = cur.fetchall()
-			for path, checksum in file_checksums.items():
-				if checksum 
+			find_files = "SELECT package_file_id FROM doc_file_package_assocations WHERE package_id == " + package_id 	# get all package_file_ids related to the package_id
+			cur.execute(find_files)
+			package_file_rows = cur.fetchall()
+			get_file_names = "SELECT relative_path FROM package_files WHERE id IN (\'" + str(', '.join(package_file_rows)) + "\')"	# get all relative paths of files in the database for the given package
+			cur.execute(get_file_names)
+			file_name_paths = cur.fetchall()
+			file_name_paths = [os.path.join(unpacked_package_location, location) for location in file_name_paths]
+			not_matched, matched = list(), list()
+			for root, dirs, files in os.walk(unpacked_package_location, topdown=True):
+				for name in files:
+					if name is not in file_name_paths:
+						not_matched.append(name)
+					if name is in file_name_paths:
+						matched.append(path)
 
-	def _get_checksums_for_list(files):
+			return not_matched, matched
+
+	def _get_checksums_for_list(self, files):
 		'''
 		Get all sha1's of the staged files.
 		'''
 		checksums = {f:hash_file(f) for f in files}
 		return checksums
 
-	def _get_filepaths(directory):
+	def _get_filepaths(self, directory):
 		"""
 		This function will generate the file names in a directory
 		tree by walking the tree either top-down or bottom-up. For each
@@ -207,24 +243,19 @@ class DoSpdx():
 
 		return file_paths  
 
-	def _hash_file(file_path):
+	def _hash_file(self, file_path):
 		'''
 		A location independent checksum generator that generates a sha1
 		of the contents of the file provided. Used in Do_SPDX to 
 		provide a so-called PackageVerificationCode so that the user
 		may detect if a package already has SPDX generated for it.
 		'''
-		try:
-			f = open(file_path, 'rb')
+		with open(file_path, 'rb') as f:
 			data_string = f.read()
-		except:
-			return None
-		finally:
-			f.close()
-		sha1 = _hash_string(data_string)
+			sha1 = _hash_string(data_string)
 		return sha1
 
-	def _hash_string(data):
+	def _hash_string(self, data):
 		'''
 		This hashing function accepts some data as a string and runs it through the sha1
 		hashing algorithm. Returns the hexdigest of the data to the caller.
@@ -250,17 +281,16 @@ class DoSpdx():
 			# TODO: Change this to be a stored procedure or at least to a prepared statement.
 			cur.execute("SELECT * FROM packages WHERE package_checksum = " + sha1)
 			rows = cur.fetchall()
-			con.close()
 			if rows:
 				return True
 			else:
 				return None
 				
-	def _insert_files_in_database(self, file_info):
+	def _create_spdx_doc(self, file_info):
 		'''
 		Inserts file information about the package into the database
 		'''
-		import MySQLdb, json, time
+		import MySQLdb
 		logger.info("Inserting into database")
 		
 		# procedure will insert file information from the scanning utility into the database
@@ -279,14 +309,17 @@ class DoSpdx():
 				info['LicenseConcluded'] = file_info[checksum]['LicenseConcluded']
 				info['FileCopyrightText'] = file_info[checksum]['FileCopyrightText']
 				info['Artifact'] = 'NOASSERTION'
-				info['RelativePath'] = 'PUTRELATIVEPATHHERE'
+				info['RelativePath'] = 'PUTRELATIVEPATHHERE'	# TODO: Create function to get relative path of file
 				info['CheckAlg'] = 'SHA1'
-				cur.execute("INSERT INTO package_files (file_name, file_type, file_copyright_text, " + \
-					"artifact_of_project_name, artifact_of_project_homepage, artifact_of_project_url," + \
-					" license_concluded, license_info_in_file, file_checksum, file_checksum_algorithm, relative_path, created_at) " + \
-					"VALUES (info['FileName'], info['FileType'], info['FileCopyrightText'], info['Artifact'], info['Artifact'], info['Artifact']," + \
-					" info['LicenseConcluded'], info['LicenseInfoInFile'], info['Checksum'], "+ \
-					"info['CheckAlg'], info['RelativePath'], time.strftime('%Y-%m-%d %H:%M:%S'))")
+				cur.execute("""INSERT INTO package_files (file_name, file_type, file_copyright_text, 
+					artifact_of_project_name, artifact_of_project_homepage, artifact_of_project_url,
+					license_concluded, license_info_in_file, file_checksum, file_checksum_algorithm, relative_path, created_at)
+					VALUES (info['FileName'], info['FileType'], info['FileCopyrightText'], info['Artifact'], info['Artifact'], info['Artifact'],
+					info['LicenseConcluded'], info['LicenseInfoInFile'], info['Checksum'],
+					info['CheckAlg'], info['RelativePath'], """ + time.strftime('%Y-%m-%d %H:%M:%S') + ")")
+
+				# TODO: insert file associations to doc_file_package_associations table
+				cur.execute("""INSERT INTO doc_file_package_associations ()""")
 				
 	def _create_manifest(self, header, files, quiet):
 		'''
@@ -413,7 +446,10 @@ def run_do_spdx():
 	info['database_name'] = configParser.get('Database', 'database_name')
 	info['database_host'] = configParser.get('Database', 'database_host')
 	info['database_port'] = configParser.get('Database', 'database_port')
-	info['database_password'] = configParser.get('Database', 'database_password')	
+	info['database_password'] = configParser.get('Database', 'database_password')
+
+	info['fossology_server'] = configParser.get('FOSSology', 'server')
+	info['fossology_flags'] = configParser.get('FOSSology', 'flags')
 
 	# Get DoSpdx object with supplied parameters
 	mDoSpdx = DoSpdx(info)
