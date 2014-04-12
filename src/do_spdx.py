@@ -48,11 +48,10 @@ class DoSpdx():
 		If settings are invalid, object initialization fails and
 		the system aborts the object creation.
 		'''
-		import os
 		self.info = info
 		# TODO: Handle _validate_configuration
-		_validate_configuration()
-		_init_logging_config()
+		self._validate_configuration()
+		self._init_logging_config()
 		logger.debug("Created DoSpdx obejct with info: " + str(info))
 
 	def _validate_configuration(self):
@@ -68,67 +67,66 @@ class DoSpdx():
 		Initialize the logging for this Do_SPDX module from the configuration file provided.
 		'''
 		import datetime
-		logging.config.fileConfig(info['config_path'])
+		logging.config.fileConfig(self.info['config_path'])
 		logger = logging.getLogger()
-		logger.debug("Logger initialized for Do_SPDX process @" + datetime.utcnow()
+		logger.debug("Logger initialized for Do_SPDX process @" + datetime.datetime.utcnow())
 
 	def do_spdx(self):
 		'''
 		The single entry point for the DoSpdx process.
-		TODO: Add details on expections of the process and user input,
+		TODO: Add details on expectations of the process and user input,
 		how it validates that input, and what it will output.
 		'''
-		import os, sys, json, tarfile, random
+		import os, sys, tarfile
 		logger.info("Starting do_spdx process")
 
 		# Get the hash of the tar file by passing it to the _hash_file function
-		package_hash = _hash_file(info['package'])
+		package_hash = self._hash_file(self.info['package'])
 
 		# Check if package is in database
-		if _file_in_database(package_hash):
+		if self._file_in_database(package_hash):
 			logger.info("Package checksum exists in database")
-			if info['force']:
+			if self.info['force']:
 				logger.info('Forcing re-scan of package')
 			else:	
-				if info['quiet']:
+				if self.info['quiet']:
 					logger.info("Exiting without output")
 					sys.exit(0)		# Exited quietly
 				else:
 					logger.info("Creating output then terminating")
-					package_files = _get_package_files(package_hash)
-					header = _get_header_info(info, package_hash)
-					_create_manifest(header, package_files, info['quiet'])
+					package_files = self._get_package_files(package_hash)
+					header = self._get_header_info(self.info, package_hash)
+					self._create_manifest(header, package_files, self.info['quiet'])
 					sys.exit(0)		# Exited with output
 
 		# get temporary directory for staging purposes
-		tmpdir = os.path.join(info['spdx_temp_dir'], 'do_spdx')
+		tmpdir = os.path.join(self.info['spdx_temp_dir'], 'do_spdx')
 
 		if not os.path.exists(tmpdir):
 			os.mkdir(tmpdir)
 
 		unpacked_package_location = None
 		# Unpack to tmpdir
-		with tarfile.open(info['package'], 'r:gz') as tar
+		with tarfile.open(self.info['package'], 'r:gz') as tar:
 			tar.extractall(tmpdir)
-			unpacked_package_location = os.path.splitext(info['package'])
+			unpacked_package_location = os.path.splitext(self.info['package'])
 			
 		# check if package checksum is in database and return id if it is
 
-		package_id = _get_package_id(package_checksum)
+		package_id = self._get_package_id(self.package_checksum)
 		not_matched, matched = list(), list()
 		if package_id:
-			not_matched, matched = _get_package_files(package_id, unpacked_package_location)
+			not_matched, matched = self._get_package_files(package_id, unpacked_package_location)
 		else:
 			for root, dirs, files in os.walk(unpacked_package_location):
 				not_matched = files
 
-		foss_server = info['foss_server']
 		foss_command = "wget %s --post-file=%s %s"\
-			% (info['fossology_flags'], not_matched, info['fossology_server'])
+			% (self.info['fossology_flags'], not_matched, self.info['fossology_server'])
 
-		foss_file_info =_run_fossology(foss_command)
+		foss_file_info =self._run_fossology(foss_command)
 
-		spdx_file_info = _create_spdx_doc(matched, foss_file_info)
+		spdx_file_info = self._create_spdx_doc(matched, foss_file_info)
 
 
 
@@ -137,34 +135,35 @@ class DoSpdx():
 		# else:
 		# 	in_database = True
 
-			_cleanup()
+		self._cleanup()
 
 
 	def _run_fossology(self, command):
 		'''
-		Creates a subprocess and executes the fossology command and returns the
+		Creates a subprocess and executes the Fossology command and returns the
 		license information of each file passed to Fossology in a single list.
 		'''
 		import string, re, subprocess
 
 		p = subprocess.Popen(command.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-		foss_output, foss_error = p.communicate()
+		foss_output = p.communicate()
 
 		records = re.findall('FileName:.*?</text>', foss_output, re.S)	# a list
 
 		file_info = {}
 		for rec in records:
-	        rec = string.replace( rec, '\r', '' )
-	        chksum = re.findall( 'FileChecksum: SHA1: (.*)\n', rec)[0]
-	        file_info[chksum] = {}
-	        file_info[chksum]['FileCopyrightText'] = re.findall( 'FileCopyrightText: '
-	            + '(.*?</text>)', rec, re.S )[0]
-	        fields = ['FileType','LicenseConcluded',
-	            'LicenseInfoInFile','FileName']
-	        for field in fields:
-	            file_info[chksum][field] = re.findall(field + ': (.*)', rec)[0]
+			rec = string.replace( rec, '\r', '' )
+			chksum = re.findall( 'FileChecksum: SHA1: (.*)\n', rec)[0]
+			file_info[chksum] = {}
+			file_info[chksum]['FileCopyrightText'] = re.findall( 'FileCopyrightText: '
+	            + '(.*?</text>)', rec, re.S )[0]	            
 
-	    return file_info
+		fields = ['FileType','LicenseConcluded','LicenseInfoInFile','FileName']
+
+		for field in fields:
+			file_info[chksum][field] = re.findall(field + ': (.*)', rec)[0]
+
+		return file_info
 
 	def _cleanup(self):
 		'''
@@ -178,9 +177,9 @@ class DoSpdx():
 		@return the id belonging to the package checksum
 		'''
 
-		import MySQLdb
-		con = mysql.connect(user=info['database_user'], password=info['database_password'], 
-			host=['database_host'], database=['database_name'])
+		import MySQLdb as mysql
+		con = mysql.connect(user=self.info['database_user'], password=self.info['database_password'], 
+			host=self.info['database_host'], database=self.info['database_name'])
 		with con:
 			cur = con.cursor()
 			sql = "SELECT id from packages WHERE package_checksum == " + package_checksum
@@ -196,9 +195,9 @@ class DoSpdx():
 		Creates a list of files that are different for the package and files that are
 		in the package and valid then returns both lists.
 		'''
-		import MySQLdb, os.path, os.walk
-		con = mysql.connect(user=info['database_user'], password=info['database_password'],
-			host=info['database_host'], database=['database_name'])
+		import MySQLdb as mysql, os.path, os.walk
+		con = mysql.connect(user=self.info['database_user'], password=self.info['database_password'],
+			host=self.info['database_host'], database=self.info['database_name'])
 		with con:
 			cur = con.cursor()
 			find_files = "SELECT package_file_id FROM doc_file_package_assocations WHERE package_id == " + package_id 	# get all package_file_ids related to the package_id
@@ -211,10 +210,10 @@ class DoSpdx():
 			not_matched, matched = list(), list()
 			for root, dirs, files in os.walk(unpacked_package_location, topdown=True):
 				for name in files:
-					if name is not in file_name_paths:
+					if name not in file_name_paths:
 						not_matched.append(name)
-					if name is in file_name_paths:
-						matched.append(path)
+					if name in file_name_paths:
+						matched.append(name)
 
 			return not_matched, matched
 
@@ -222,7 +221,7 @@ class DoSpdx():
 		'''
 		Get all sha1's of the staged files.
 		'''
-		checksums = {f:hash_file(f) for f in files}
+		checksums = {f:self._hash_file(f) for f in files}
 		return checksums
 
 	def _get_filepaths(self, directory):
@@ -232,6 +231,7 @@ class DoSpdx():
 		directory in the tree rooted at directory top (including top itself),
 		it yields a 3-tuple (dirpath, dirnames, filenames).
 		"""
+		import os
 		file_paths = []  # List which will store all of the full filepaths.
 
 		# Walk the tree.
@@ -252,7 +252,7 @@ class DoSpdx():
 		'''
 		with open(file_path, 'rb') as f:
 			data_string = f.read()
-			sha1 = _hash_string(data_string)
+			sha1 = self._hash_string(data_string)
 		return sha1
 
 	def _hash_string(self, data):
@@ -268,16 +268,16 @@ class DoSpdx():
 		return file_sha1.hexdigest()
 
 	def _file_in_database(self, sha1):
-		import MySQLdb, json
+		import MySQLdb as mysql
 		logger.info("Querying database")
 
 		# procedure is something like select * from packages where package_checksum = package_cs
-		con = mysql.connect(user=info['database_user'], passwd=info['database_password'], 
-			host=['database_host'], database=['database_name'])
+		con = mysql.connect(user=self.info['database_user'], passwd=self.info['database_password'], 
+			host=self.info['database_host'], database=self.info['database_name'])
 		with con:
 			logger.debug("Connection succeeded, querying")
 			cur = con.cursor()
-			logger.debug("Query: SELECT * FROM " + table + " WHERE " + my_type + "_checksum = " + package_cs)
+			logger.debug("Query: SELECT * FROM packages WHERE package_checksum == " + sha1)
 			# TODO: Change this to be a stored procedure or at least to a prepared statement.
 			cur.execute("SELECT * FROM packages WHERE package_checksum = " + sha1)
 			rows = cur.fetchall()
@@ -290,18 +290,18 @@ class DoSpdx():
 		'''
 		Inserts file information about the package into the database
 		'''
-		import MySQLdb
+		import MySQLdb as mysql, time
 		logger.info("Inserting into database")
 		
 		# procedure will insert file information from the scanning utility into the database
-		con = mysql.connect(user=info['database_user'], passwd=info['database_password'], 
-			host=['database_host'], database=['database_name'])
+		con = mysql.connect(user=self.info['database_user'], passwd=self.info['database_password'], 
+			host=self.info['database_host'], database=self.info['database_name'])
 		with con:
 			logger.debug("Connection succeeded, inserting")
-			cur = cur.cursor()
+			cur = con.cursor()
 			logger.debug("INSERT alot INTO table")
 			for checksum in file_info.keys():
-				info {}
+				info = {}
 				info['FileName'] = file_info[checksum]['FileName']
 				info['FileType'] = file_info[checksum]['FileType']
 				info['Checksum'] = checksum
@@ -339,7 +339,7 @@ class DoSpdx():
 
 		# Only output if quiet is not enabled
 		if not quiet:
-			with open(info['outfile'], 'w') as f:
+			with open(self.info['outfile'], 'w') as f:
 				f.write(to_file)	# write to file
 				if f is not stdout:	# output to command line if not already
 					print to_file
@@ -358,16 +358,16 @@ class DoSpdx():
 
 		#spdx_verification_code = get_ver_code( info['sourcedir'] )
 		package_checksum = ''
-		if os.path.exists(info['tar_file']):
-		    package_checksum = hash_file( info['tar_file'] )
+		if os.path.exists(self.info['tar_file']):
+		    package_checksum = self._hash_file(self.info['tar_file'] )
 		else:
 		    package_checksum = DEFAULT
 
 		## document level information
-		head.append("SPDXVersion: " + info['spdx_version'])
-		head.append("DataLicense: " + info['data_license'])
+		head.append("SPDXVersion: " + self.info['spdx_version'])
+		head.append("DataLicense: " + self.info['data_license'])
 		head.append("DocumentComment: <text>SPDX for "
-		    + info['pn'] + " version " + info['pv'] + "</text>")
+		    + self.info['pn'] + " version " + self.info['pv'] + "</text>")
 		head.append("")
 
 		## Creator information
@@ -380,17 +380,17 @@ class DoSpdx():
 
 		## package level information
 		head.append("## Package Information")
-		head.append("PackageName: " + info['pn'])
-		head.append("PackageVersion: " + info['pv'])
+		head.append("PackageName: " + self.info['pn'])
+		head.append("PackageVersion: " + self.info['pv'])
 		head.append("PackageDownloadLocation: " + DEFAULT)
 		head.append("PackageSummary: <text></text>")
-		head.append("PackageFileName: " + os.path.basename(info['tar_file']))
+		head.append("PackageFileName: " + os.path.basename(self.info['tar_file']))
 		head.append("PackageSupplier: Person:" + DEFAULT)
 		head.append("PackageOriginator: Person:" + DEFAULT)
 		head.append("PackageChecksum: SHA1: " + package_checksum)
 		head.append("PackageVerificationCode: " + spdx_verification_code)
-		head.append("PackageDescription: <text>" + info['pn']
-		    + " version " + info['pv'] + "</text>")
+		head.append("PackageDescription: <text>" + self.info['pn']
+		    + " version " + self.info['pv'] + "</text>")
 		head.append("")
 		head.append("PackageCopyrightText: <text>" + DEFAULT + "</text>")
 		head.append("")
@@ -405,13 +405,11 @@ class DoSpdx():
 
 		return '\n'.join(head)
 
-# Only execute run_do_spdx if the module was called from command line
-if __name__ = '__main__':
-	run_do_spdx()
+
 		
 def run_do_spdx():
 	from argparse import ArgumentParser
-	from ConfigParser import ConfigParser
+	import ConfigParser
 	from sys import exit
 	import os.path
 
@@ -431,8 +429,9 @@ def run_do_spdx():
 		info['quiet'] = args.quiet
 	if args.force:
 		info['force'] = args.force
-	configParser = ConfigParser.RawConfigParser()
+	configParser = ConfigParser.ConfigParser()
 	configParser.read(info['config_path'])
+# 	(info['config_path'])
 
 	# Getting General Settings for Do_SPDX
 	info['author'] = configParser.get('Settings', 'author')
@@ -456,3 +455,7 @@ def run_do_spdx():
 	# Run do_spdx process on that object
 	completed = mDoSpdx.do_spdx()
 	# Output should be for the supplied outfile, or to stdout if not supplied.
+	
+# Only execute run_do_spdx if the module was called from command line
+if __name__ is '__main__':
+	run_do_spdx()
