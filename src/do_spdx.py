@@ -109,7 +109,7 @@ class DoSpdx():
 		# Unpack to tmpdir
 		with tarfile.open(self.info['package'], 'r:gz') as tar:
 			tar.extractall(tmpdir)
-			unpacked_package_location = os.path.splitext(self.info['package'])
+			unpacked_package_location = os.path.splitext(os.path.splitext(self.info['package'])[0])[0]
 			
 		# check if package checksum is in database and return id if it is
 
@@ -121,10 +121,14 @@ class DoSpdx():
 			for root, dirs, files in os.walk(unpacked_package_location):
 				not_matched = files
 
-		foss_command = "wget %s --post-file=%s %s"\
-			% (self.info['fossology_flags'], not_matched, self.info['fossology_server'])
+		temp_tar_name = unpacked_package_location + datetime.now.strftime('%Y-%m-%d_%H:%M:%S')
+		with tarfile.open(temp_tar_name, "w:gz") as tar:
+			for to_add in not_matched:
+				tar.add(to_add)
 
-		foss_file_info =self._run_fossology(foss_command)
+		scanner_command = self.info['scanner_command'] % (self.info['flag'], not_matched)
+
+		foss_file_info =self._run_scanner(scanner_command)
 
 		spdx_file_info = self._create_spdx_doc(matched, foss_file_info)
 
@@ -138,7 +142,7 @@ class DoSpdx():
 		self._cleanup()
 
 
-	def _run_fossology(self, command):
+	def _run_scanner(self, command):
 		'''
 		Creates a subprocess and executes the Fossology command and returns the
 		license information of each file passed to Fossology in a single list.
@@ -158,7 +162,7 @@ class DoSpdx():
 			file_info[chksum]['FileCopyrightText'] = re.findall( 'FileCopyrightText: '
 	            + '(.*?</text>)', rec, re.S )[0]	            
 
-		fields = ['LicenseDeclared','LicenseInfoInFile','FileName']		# LicenseDeclared, FileName, LicenseComments
+		fields = ['FileType', 'LicenseConcluded','LicenseInfoInFile','FileName']		# LicenseDeclared, FileName, LicenseComments
 
 		for field in fields:
 			file_info[chksum][field] = re.findall(field + ': (.*)', rec)[0]
@@ -332,21 +336,17 @@ class DoSpdx():
 		by the user, stdout if none is provided.
 		'''
 		from sys import stdout
-
-		# Construct manifest
-		to_file = header + '\n'
-		for chksum, block in files.iteritems():
-			for key, value in block.iteritems():
-				to_file += key + ": " + value
-				to_file += '\n'
-			to_file += '\n'
-
-		# Only output if quiet is not enabled
 		if not quiet:
-			with open(self.info['outfile'], 'w') as f:
-				f.write(to_file)	# write to file
-				if f is not stdout:	# output to command line if not already
-					print to_file
+			# Construct manifest
+			to_file = header + '\n'
+			for chksum, block in files.iteritems():
+				for key, value in block.iteritems():
+					to_file += key + ": " + value
+					to_file += '\n'
+				to_file += '\n'
+
+			# Only output if quiet is not enabled
+			print to_file
 		# END of _create_manifest()
 
 	def _get_header_info(self, spdx_verification_code):
@@ -451,13 +451,14 @@ def run_do_spdx():
 	info['database_port'] = configParser.get('Database', 'database_port')
 	info['database_password'] = configParser.get('Database', 'database_password')
 
-	info['fossology_server'] = configParser.get('FOSSology', 'server')
-	info['fossology_flags'] = configParser.get('FOSSology', 'flags')
+	info['scanner_command'] = configParser.get('Scanner', 'command')
+	info['scanner_flag'] = configParser.get('Scanner', 'flag')
 
 	# Get DoSpdx object with supplied parameters
 	mDoSpdx = DoSpdx(info)
 	# Run do_spdx process on that object
-	completed = mDoSpdx.do_spdx()
+	pId = mDoSpdx.do_spdx()
+	return pId
 	# Output should be for the supplied outfile, or to stdout if not supplied.
 	
 # Only execute run_do_spdx if the module was called from command line
