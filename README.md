@@ -81,7 +81,7 @@ As SPDX consumers, you may wish to force a re-scan of an existing package if you
 You can run forced mode like this:  
 `python do_spdx.py mypackage.tar.gz -c do_spdx.cfg -f` or `./do_spdx.py mypackage.tar.gz -c do_spdx.cfg -f`
 
-For detailed use cases, a command line execution use cases can be found [here] (https://github.com/chaughawout/Do_SPDX/blob/master/documentation/use%20cases/Run%20from%20command%20line.md "Command line execution use case") and an instantiation execution use case can be found [here] (https://github.com/chaughawout/Do_SPDX/blob/master/documentation/use%20cases/Run%20from%20instantiated%20object.md "Instantiation execution use case").
+For detailed use cases, a command line execution use cases can be found [here](https://github.com/chaughawout/Do_SPDX/blob/master/documentation/use%20cases/Run%20from%20command%20line.md "Command line execution use case") and an instantiation execution use case can be found [here](https://github.com/chaughawout/Do_SPDX/blob/master/documentation/use%20cases/Run%20from%20instantiated%20object.md "Instantiation execution use case").
 
 Communities of Interest
 -----------------------

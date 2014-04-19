@@ -32,7 +32,7 @@
 # /documentation/license/LICENSE.txt
 
 import logging
-logger = logging.getLogger(__name__)
+logger = None
 
 class DoSpdx():
 	"""
@@ -40,7 +40,6 @@ class DoSpdx():
 	Simply call do_spdx after initializing a DoSpdx object and passing it the required arguments.
 	"""
 
-	info = {}
 	def __init__(self, info):
 		'''
 		Construct a DoSpdx object with the provided info settings.
@@ -58,7 +57,6 @@ class DoSpdx():
 		'''
 		Ensures that the expected required parameters are valid and that users have the required permissions.
 		'''
-		# TODO Implementation
 		
 		pass
 
@@ -67,7 +65,7 @@ class DoSpdx():
 		Initialize the logging for this Do_SPDX module from the configuration file provided.
 		'''
 		import datetime
-		logging.config.fileConfig(self.info['config_path'])
+		logging.config.fileConfig("./do_spdx.cfg")
 		logger = logging.getLogger()
 		logger.debug("Logger initialized for Do_SPDX process @" + datetime.datetime.utcnow())
 
@@ -94,7 +92,7 @@ class DoSpdx():
 					sys.exit(0)		# Exited quietly
 				else:
 					logger.info("Creating output then terminating")
-					package_files = self._get_package_files(package_hash)
+					empty, package_files = self._get_package_files(package_hash)
 					header = self._get_header_info(self.info, package_hash)
 					self._create_manifest(header, package_files, self.info['quiet'])
 					sys.exit(0)		# Exited with output
@@ -147,7 +145,7 @@ class DoSpdx():
 		Creates a subprocess and executes the Fossology command and returns the
 		license information of each file passed to Fossology in a single list.
 		'''
-		import string, re, subprocess
+		import json, string, re, subprocess
 
 		p = subprocess.Popen(command.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 		foss_output = p.communicate()
@@ -196,10 +194,12 @@ class DoSpdx():
 
 	def _get_package_files(self, package_id, unpacked_package_location):
 		'''
-		Creates a list of files that are different for the package and files that are
+		Creates a list of file paths that are different for the package and files that are
 		in the package and valid then returns both lists.
 		'''
-		import MySQLdb as mysql, os.path, os.walk
+		import MySQLdb as mysql
+		import os.path, os.walk
+
 		con = mysql.connect(user=self.info['database_user'], password=self.info['database_password'],
 			host=self.info['database_host'], database=self.info['database_name'])
 		with con:
@@ -435,7 +435,7 @@ def run_do_spdx():
 		info['force'] = args.force
 	configParser = ConfigParser.ConfigParser()
 	configParser.read(info['config_path'])
-# 	(info['config_path'])
+	# info['config_path']
 
 	# Getting General Settings for Do_SPDX
 	info['author'] = configParser.get('Settings', 'author')
