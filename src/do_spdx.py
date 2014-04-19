@@ -158,7 +158,7 @@ class DoSpdx():
 			file_info[chksum]['FileCopyrightText'] = re.findall( 'FileCopyrightText: '
 	            + '(.*?</text>)', rec, re.S )[0]	            
 
-		fields = ['FileType','LicenseConcluded','LicenseInfoInFile','FileName']
+		fields = ['LicenseDeclared','LicenseInfoInFile','FileName']		# LicenseDeclared, FileName, LicenseComments
 
 		for field in fields:
 			file_info[chksum][field] = re.findall(field + ': (.*)', rec)[0]
@@ -314,12 +314,16 @@ class DoSpdx():
 				cur.execute("""INSERT INTO package_files (file_name, file_type, file_copyright_text, 
 					artifact_of_project_name, artifact_of_project_homepage, artifact_of_project_url,
 					license_concluded, license_info_in_file, file_checksum, file_checksum_algorithm, relative_path, created_at)
-					VALUES (info['FileName'], info['FileType'], info['FileCopyrightText'], info['Artifact'], info['Artifact'], info['Artifact'],
-					info['LicenseConcluded'], info['LicenseInfoInFile'], info['Checksum'],
-					info['CheckAlg'], info['RelativePath'], """ + time.strftime('%Y-%m-%d %H:%M:%S') + ")")
+					VALUES (""" + str(info['FileName']) + """, """ + str(info['FileType']) + """, """ + str(info['FileCopyrightText']) + """, """
+						+ str(info['Artifact']) + """, """ + str(info['Artifact']) + """, """ + str(info['Artifact']) + """, """
+						+ str(info['LicenseConcluded']) + """, """ + str(info['LicenseInfoInFile']) + """, """ + str(info['Checksum']) + """, """
+						+ str(info['CheckAlg']) + """, """ + str(info['RelativePath']) + """,""" + time.strftime('%Y-%m-%d %H:%M:%S') + ")""")
 
 				# TODO: insert file associations to doc_file_package_associations table
-				cur.execute("""INSERT INTO doc_file_package_associations ()""")
+				cur.execute("""INSERT INTO doc_file_package_associations (spdx_doc_id, package_id, package_file_id, created_at, updated_at)
+					VALUES (""" + str() + """, """ + str() + """, """
+					+ str() + """, """ + str() + """, """ + str() + """, """
+					+ str() + """, """ + str()""")""")
 				
 	def _create_manifest(self, header, files, quiet):
 		'''
