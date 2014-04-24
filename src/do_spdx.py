@@ -34,6 +34,9 @@
 import logging
 logger = None
 
+LOG_CONFIG_PATH = """./do_spdx_log.cfg"""
+CONFIG_PATH = """./do_spdx.cfg"""
+
 class DoSpdx():
 	"""
 	This class manages the creation and storage of spdx documentation into a database.
@@ -75,7 +78,7 @@ class DoSpdx():
 		TODO: Add details on expectations of the process and user input,
 		how it validates that input, and what it will output.
 		'''
-		import os, sys, tarfile
+		import os, sys, tarfile, datetime
 		logger.info("Starting do_spdx process")
 
 		# Get the hash of the tar file by passing it to the _hash_file function
@@ -119,7 +122,7 @@ class DoSpdx():
 			for root, dirs, files in os.walk(unpacked_package_location):
 				not_matched = files
 
-		temp_tar_name = unpacked_package_location + datetime.now.strftime('%Y-%m-%d_%H:%M:%S')
+		temp_tar_name = unpacked_package_location + datetime.datetime
 		with tarfile.open(temp_tar_name, "w:gz") as tar:
 			for to_add in not_matched:
 				tar.add(to_add)
@@ -185,7 +188,7 @@ class DoSpdx():
 		with con:
 			cur = con.cursor()
 			sql = "SELECT id from packages WHERE package_checksum == " + package_checksum
-			cur.execute()
+			cur.execute(sql)
 			rows = cur.fetchall()
 			if rows is not None:	# query returned a package whose checksum matches
 				return rows[0]
@@ -240,10 +243,10 @@ class DoSpdx():
 
 		# Walk the tree.
 		for root, directories, files in os.walk(directory):
-		    for filename in files:
-		        # Join the two strings in order to form the full filepath.
-		        filepath = os.path.join(root, filename)
-		        file_paths.append(filepath)  # Add it to the list.
+			for filename in files:
+				# Join the two strings in order to form the full filepath.
+				filepath = os.path.join(root, filename)
+				file_paths.append(filepath)  # Add it to the list.
 
 		return file_paths  
 
@@ -327,7 +330,7 @@ class DoSpdx():
 				cur.execute("""INSERT INTO doc_file_package_associations (spdx_doc_id, package_id, package_file_id, created_at, updated_at)
 					VALUES (""" + str() + """, """ + str() + """, """
 					+ str() + """, """ + str() + """, """ + str() + """, """
-					+ str() + """, """ + str()""")""")
+					+ str() + """, """ + str() + """)""")
 				
 	def _create_manifest(self, header, files, quiet):
 		'''
@@ -335,7 +338,6 @@ class DoSpdx():
 		from the scanner(s). The manifest is output to the outfile provided
 		by the user, stdout if none is provided.
 		'''
-		from sys import stdout
 		if not quiet:
 			# Construct manifest
 			to_file = header + '\n'
@@ -363,9 +365,9 @@ class DoSpdx():
 		#spdx_verification_code = get_ver_code( info['sourcedir'] )
 		package_checksum = ''
 		if os.path.exists(self.info['tar_file']):
-		    package_checksum = self._hash_file(self.info['tar_file'] )
+			package_checksum = self._hash_file(self.info['tar_file'] )
 		else:
-		    package_checksum = DEFAULT
+			package_checksum = DEFAULT
 
 		## document level information
 		head.append("SPDXVersion: " + self.info['spdx_version'])
@@ -414,8 +416,6 @@ class DoSpdx():
 def run_do_spdx():
 	from argparse import ArgumentParser
 	import ConfigParser
-	from sys import exit
-	import os.path
 
 	# Set up base parser
 	parser = ArgumentParser(description='Generate spdx documents for the provided tarfile')
