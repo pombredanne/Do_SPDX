@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from symbol import except_clause
 
 # This class integrates real-time license scanning, generation of SPDX standard
 # output and verifiying license info.
@@ -32,11 +31,12 @@ from symbol import except_clause
 '''
 Created on Apr 28, 2014
 
-@license: 
+@see: www.spdx.org
+@license: Apache License v2.0
 @author: Corbin Haughawout
 '''
 import logging, datetime
-from spdx.entity.spdx import spdx
+from spdx.entity.spdx import SPDX
 from spdx.entity.package import Package
 from spdx.entity.pfile import PackageFile
 
@@ -54,11 +54,16 @@ package_hash = None
 def do_spdx(package, author, spdx_version, 
             database_user, database_name, database_host, database_port, 
             database_pass, scanner_command, scanner_flag):
+    '''
+    The single entry point for the DoSpdx process.
+    TODO: Add details on expectations of the process and user input,
+    how it validates that input, and what it will output.
+    '''
     import os, sys, tarfile
     logger.debug('In Do_SPDX()...')
     package_hash = hash_file(package)
-    
-    if package_in_database(package_hash):
+    package = package_in_database(package_hash)
+    if package is not None:
         logger.info('Package found in database')
         if force:
             logger.info('Forcing re-scan of package')
@@ -71,7 +76,9 @@ def do_spdx(package, author, spdx_version,
                 '''
                 @todo:  implement using entity package
                 ''' 
+                package.package_files = get_associated_files(package.package_id)
                 
+                header = create_header(package)
                 sys.exit(0)
     
     if not os.path.exists(DO_SPDX_TEMP_DIR):
@@ -79,20 +86,115 @@ def do_spdx(package, author, spdx_version,
         
     unpacked = None
     
-    open_success = False
     with tarfile.open(package, 'r:gz') as tar:
         tar.extractall(DO_SPDX_TEMP_DIR)
-
-    package_id = get_package_id(package_hash)
+        
+    
     
 
-def get_package_id(package_hash):
-    pass
+"""
+@todo: Get creator information (license scanner)
+"""
+def create_header(package, spdx):
+    import os
+    head = []
+    DEFAULT = 'NOASSERTION'
+    
+    # document level information
+    head.append("SPDXVersion: " + package.spdx_version)
+    head.append("DataLicense: " + package.data_license)
+    head.append("DocumentComment: <text>SPDX for "
+                + package.package_name + " version " + package.package_verification_code
+                + "</text>")
+    head.append("")
+    
+    # creator information
+    now = datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
+    head.append('## Creation Information')
+    head.append("Creator: ")
+    
+    
+    
+def get_package_spdx(package_id):
+    import MySQLdb as mysql
+    
+    with mysql.connect(user=database_user, password=database_pass,
+                        host=database_host, database=database_name) as con:
+        cur = con.cursor()
+        sql = "SELECT * FROM spdx_docs LEFT JOIN doc_file_package_associations on spdx_docs.id = doc_file_package_associations spdx_doc_id"
+        cur.execute(sql)
+        rows = cur.fetchall()
+        spdx_docs = list()
+        if rows is not None:
+            for row in rows:
+                spdx_doc = SPDX(row[0], row[1], row[2], row[3], row[4],
+                                 row[5], row[6], row[7], row[8], row[9])
+                spdx_docs.append(spdx_doc)
+            return tuple(spdx_docs)
+        return None
 
-def package_in_database(hash):
-    pass
+def get_associated_files(package_id):
+    import MySQLdb as mysql
+    
+    with mysql.connect(user=database_user, password=database_pass, 
+                        host=database_host, database=database_name) as con:
+        cur = con.cursor()
+        sql = "SELECT * FROM package_files LEFT JOIN doc_file_package_associations on package_files.id = b.package_file_id"
+        cur.execute(sql)
+        rows = cur.fetchall()
+        
+        package_files = list()
+        if rows is not None:
+            for row in rows:
+                package_file = PackageFile(row[0], row[1], row[2], row[3],
+                                           row[4], row[5], row[6], row[7],
+                                           row[8], row[9], row[10], row[11],
+                                           row[12], row[13], row[14], row[15],
+                                           row[16], row[17], row[18])
+                package_files.append(package_file)
+                
+                
+            return tuple(package_files)
+        return None
+
+def insert_new_package(package, package_files,):
+    import MySQLdb as mysql
+    
+    with mysql.connect(user=database_user, password=database_pass, 
+                       host=database_host, database=database_name) as con:
+        cur = con.cursor()
+        sql = "INSERT INTO package_files "
+        try:
+            cur.execute(sql)
+            cur.commit()
+        except:
+            cur.rollback()
+
+def package_in_database(package_checksum):
+    '''
+    @raise Exception: If the insert fails, raises a new exception
+    '''
+    import MySQLdb as mysql
+    with mysql.connect(user=database_user, password=database_pass, 
+                       host=database_host, database=database_name) as con:
+        cur = con.cursor()
+        sql = "SELECT * from packages WHERE package_checksum == " + package_checksum
+        cur.execute(sql)
+        row = cur.fetchone()
+        if row is not None:
+            package = Package(row[0], row[1], row[2], row[3], row[4], row[5],
+                          row[6], row[7], row[8], row[9], row[10], row[11],
+                          row[12], row[13], row[14], row[15], row[16], row[17],
+                          row[18], row[19], row[20], row[21], row[22])
+            return package
+        else:
+            return None
+    
     
 def hash_file(path):
+    '''
+    @raise Exception: Raises a new exception if unable to open file.
+    '''
     with open(path, 'rb') as f:
         data_string = f.read()
         sha1 = hash_string(data_string)
@@ -106,21 +208,64 @@ def hash_string(string):
 
 def validate_parameters(package, author, spdx_version, 
             database_user, database_name, database_host, database_port, 
-            database_pass, scanner_command, scanner_flag):
+            database_pass):
     import os, tarfile
-    
+    import MySQLdb as mysql
+    logger.debug('Testing package...')
     if not os.path.exists(package):
         raise ValueError('Invalid path to package')
     
     if not tarfile.is_tarfile(package):
         raise ValueError('Package provided is not a tarfile.')
+    logger.debug('Test successful.')
     
+    logger.debug("Testing database...")
+    MySQLExceptions = list()    # Used to get a list of tables missing for logging and error handling
+    
+    with mysql.connect(user=database_user, password=database_pass, 
+            host=database_host, database=database_name) as con:
+        logger.debug('Connection established @%s:%s for user %s' % (con.host, con.port, con.user))
+        cur = con.cursor()
+        sql_commands = list()
+        sql_commands.append("SHOW TABLES LIKE 'spdx_docs'")
+        sql_commands.append("SHOW TABLES LIKE 'packages'")
+        sql_commands.append("SHOW TABLES LIKE 'package_files'")
+        sql_commands.append("SHOW TABLES LIKE 'licenses'")
+        sql_commands.append("SHOW TABLES LIKE 'doc_license_associations'")
+        sql_commands.append("SHOW TABLES LIKE 'licensing'")
+        sql_commands.append("SHOW TABLES LIKE 'doc_file_package_associations'")
+        sql_commands.append("SHOW TABLES LIKE 'creators'")
+        sql_commands.append("SHOW TABLES LIKE 'reviewers'")
+        sql_commands.append("SHOW TABLES LIKE 'spdx_docs'")
+        sql_commands.append("SHOW TABLES LIKE 'products'")
+        sql_commands.append("SHOW TABLES LIKE 'product_software'")
+        sql_commands.append("SHOW TABLES LIKE 'software'")
+        try:
+            for sql in sql_commands:
+                logger.debug('Testing: %s' % sql)
+                cur.execute(sql)
+                if not cur.fetchone():
+                    MySQLExceptions.append(mysql.MySQLError("Table does not exist for query: %s\n" % sql))
+        except:
+            raise
+        
+        if MySQLExceptions:
+            MySQLExceptions = tuple(MySQLExceptions)
+            logger.debug('Database test failed: %s' % MySQLExceptions)
+            raise mysql.MySQLError("Invalid Database: %s" % MySQLExceptions)
+        
+    logger.debug("Test successful.")
+    logger.debug("All tests successful.")
+        
+        
 
 if __name__ == '__main__':
     
     from argparse import ArgumentParser
-    import ConfigParser, sys
+    import ConfigParser, sys, time
     
+    
+    start = time.clock()
     logger.info('Starting Do_SPDX @' + datetime.datetime.now())
     logger.debug('Begin argument parsing...')
     parser = ArgumentParser(prog="Do_SPDX", usage="./do_spdx.py FILE [OPTIONS]", 
@@ -137,8 +282,7 @@ if __name__ == '__main__':
         force = args.force
     # END CLI
     
-    logger.debug('Finished argument parsing. package = ' + package + 
-                 '; quiet = ' + quiet + '; force = ' + force)
+    logger.debug('Finished argument parsing. package = %s; quiet = %s; force = %s' % (package, quiet, force))
     
     logger.debug('Begin configuration parsing...')
     # Begin configuration parsing
@@ -159,7 +303,7 @@ if __name__ == '__main__':
     # Scanner Settings
     scanner_command = configParser.get('Scanner', 'command')
     scanner_flag = configParser.get('Scanner', 'flag')
-    logger.debug('Finished configuration parsing. package = ' + package + '; author = ' + author + 
+    logger.debug('Finished configuration parsing. package = %s; author = ' + author + 
                  '; spdx_version = ' + spdx_version + '; database_user = ' + database_user + '; database_name = ' + database_name + 
                  '; database_host = ' + database_host + '; database_port = ' + database_port + '; database_pass = ' + database_pass)
     
@@ -171,76 +315,80 @@ if __name__ == '__main__':
     except ValueError as e:
         logger.error(e.message)
         sys.exit(1) # Return 1 for invalid input
+    
     do_spdx(package, author, spdx_version, 
             database_user, database_name, database_host, database_port, 
             database_pass, scanner_command, scanner_flag)
-    logger.info('Finished operations @' + datetime.datetime.now())
-
-class CompressedFile (object):
-    magic = None
-    file_type = None
-    mime_type = None
-    proper_extension = None
-
-    def __init__(self, f):
-        # f is an open file or file like object
-        self.f = f
-        self.accessor = self.open()
-
-    @classmethod
-    def is_magic(self, data):
-        return data.startswith(self.magic)
-
-    def open(self):
-        return None
-
-import zipfile
-
-class ZIPFile (CompressedFile):
-    magic = '\x50\x4b\x03\x04'
-    file_type = 'zip'
-    mime_type = 'compressed/zip'
-
-    def open(self):
-        return zipfile.ZipFile(self.f)
-
-import bz2
-
-class BZ2File (CompressedFile):
-    magic = '\x42\x5a\x68'
-    file_type = 'bz2'
-    mime_type = 'compressed/bz2'
-
-    def open(self):
-        return bz2.BZ2File(self.f)
-
-import gzip
-
-class GZFile (CompressedFile):
-    magic = '\x1f\x8b\x08'
-    file_type = 'gz'
-    mime_type = 'compressed/gz'
-
-    def open(self):
-        return gzip.GzipFile(self.f)
+    end = time.clock()
+    logger.info('Finished operations @%s in %s' % (datetime.datetime.now(), end-start)
 
 
-# factory function to create a suitable instance for accessing files
-def get_compressed_file(filename):
-    with file(filename, 'rb') as f:
-        start_of_file = f.read(1024)
-        f.seek(0)
-        for cls in (ZIPFile, BZ2File, GZFile):
-            if cls.is_magic(start_of_file):
-                return cls(f)
 
-        return None
-
-filename='test.zip'
-cf = get_compressed_file(filename)
-if cf is not None:
-    print filename, 'is a', cf.mime_type, 'file'
-    print cf.accessor
-    
-    
-    
+# Factory for uncompressing a file
+# Implement later 
+#
+# class CompressedFile (object):
+#     magic = None
+#     file_type = None
+#     mime_type = None
+#     proper_extension = None
+# 
+#     def __init__(self, f):
+#         # f is an open file or file like object
+#         self.f = f
+#         self.accessor = self.open()
+# 
+#     @classmethod
+#     def is_magic(self, data):
+#         return data.startswith(self.magic)
+# 
+#     def open(self):
+#         return None
+# 
+# import zipfile
+# 
+# class ZIPFile (CompressedFile):
+#     magic = '\x50\x4b\x03\x04'
+#     file_type = 'zip'
+#     mime_type = 'compressed/zip'
+# 
+#     def open(self):
+#         return zipfile.ZipFile(self.f)
+# 
+# import bz2
+# 
+# class BZ2File (CompressedFile):
+#     magic = '\x42\x5a\x68'
+#     file_type = 'bz2'
+#     mime_type = 'compressed/bz2'
+# 
+#     def open(self):
+#         return bz2.BZ2File(self.f)
+# 
+# import gzip
+# 
+# class GZFile (CompressedFile):
+#     magic = '\x1f\x8b\x08'
+#     file_type = 'gz'
+#     mime_type = 'compressed/gz'
+# 
+#     def open(self):
+#         return gzip.GzipFile(self.f)
+# 
+# 
+# # factory function to create a suitable instance for accessing files
+# def get_compressed_file(filename):
+#     with file(filename, 'rb') as f:
+#         start_of_file = f.read(1024)
+#         f.seek(0)
+#         for cls in (ZIPFile, BZ2File, GZFile):
+#             if cls.is_magic(start_of_file):
+#                 return cls(f)
+# 
+#         return None
+# 
+# filename='test.zip'
+# cf = get_compressed_file(filename)
+# if cf is not None:
+#     print filename, 'is a', cf.mime_type, 'file'
+#     print cf.accessor
