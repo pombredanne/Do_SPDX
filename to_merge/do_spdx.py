@@ -1,3 +1,4 @@
+#!/usr/bin/python
 # Copyright 2014 Corbin Haughawout
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -36,6 +37,9 @@ Created on Apr 28, 2014
 @author: Corbin Haughawout
 '''
 import logging, datetime
+import spdx.entity.spdx as spdx
+import spdx.entity.package as p
+import spdx.entity.pfile as pfile
 from spdx.entity.spdx import SPDX
 from spdx.entity.package import Package
 from spdx.entity.pfile import PackageFile
@@ -91,11 +95,85 @@ def do_spdx(source, author, spdx_version,
     if not os.path.exists(DO_SPDX_TEMP_DIR):
         os.makedirs(DO_SPDX_TEMP_DIR, 0777)
         
-    unpacked = None
-    
-    with tarfile.open(package, 'r:gz') as tar:
+    package_basename = os.path.basename(source) # Includes file extension
+    with tarfile.open(source, 'r:gz') as tar:
         tar.extractall(DO_SPDX_TEMP_DIR)
+        # if source is ../path/file.tar.gz, unpacked_location = ${DO_SPDX_TEMP_DIR}/file{timestamp}
+        tmp_location = os.path.join(os.path.join(DO_SPDX_TEMP_DIR,  
+                                    os.path.splitext(
+                                    os.path.splitext(package_basename)[0])[0]),
+                                    datetime.datetime.now())
+    
+    contents = set()
+    for root, _, files in os.walk(tmp_location):
+        for fileName in files:
+            relDir = os.path.relpath(root, tmp_location)
+            relFile = os.path.relpath(relDir, fileName)
+            contents.add(relFile)
+    
+    # check database for contents, create a set containing files not found, another for files that were
+    matched_files, unmatched_files = get_file_sets(contents)
+    tmp_tar = os.path.join(DO_SPDX_TEMP_DIR, os.path.splitext(os.path.splitext(package_basename)[0])[0])
+    with tarfile.open(tmp_tar, "w:gz") as tar:
+        for to_add in unmatched_files:
+            tar.add(to_add)
+            
+    scanner_file_info = run_scanner(scanner_command, scanner_flag)
+    
+    
+def run_scanner(scanner_command, scanner_flag):
+    import json, string, subprocess
+    
+    p = subprocess.Popen(scanner_command % scanner_flag, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    scanner_output = p.communicate()
+    
+    records = json.
+    
+    
+def get_file_sets(contents):
+    import MySQLdb as mysql
+    hashes = dict()
+    matched, unmatched = dict(), list()
+    for content in contents:
+        hashes[content] = hash_file(content)
+    
+    with mysql.connect(user=database_user, password=database_pass,
+                       host=database_host, database=database_name) as con:
+        cur = con.cursor()
+        sqls = list()
+        for _, my_hash in hashes:
+            sqls.append("SELECT * FROM package_files WHERE file_checksum == %s" % my_hash)
+        try:
+            for sql in sqls:
+                cur.execute(sql)
+                row = cur.fetchone()
+                if row is not None:
+                    package_file = PackageFile(row[0], row[1], row[2], row[3], row[4], row[5],
+                                               row[6], row[7], row[8], row[9], row[10], row[11],
+                                               row[12], row[13], row[14], row[15], row[16], row[17])
+                    matched[package_file.relative_path] = package_file
+        except Exception as e:
+            logger.error(e.message)
+            raise e
+  
+    for content in contents:
+        if content not in matched:
+            unmatched.append(content)
         
+    return matched, unmatched
+  
+ 
+def cleanup(tmp_location):
+    '''
+    @todo: Implement cleanup of tmp directory
+    '''
+    from os import removedirs
+    logger.debug("Removing temporary files at [%s]..." % tmp_location)
+    removedirs(tmp_location)
+    logger.debug("Removal of temporary files successful.")
+    
+        
+
 def create_manifest(header, package_files):
     if not quiet:
         manifest = header.join("\n")
@@ -104,18 +182,6 @@ def create_manifest(header, package_files):
                 manifest.join(str(member)).join("\n")
         return manifest
     return None
-            
-            
-            
-#     if not quiet:
-#         # Construct manifest
-#         to_file = header + '\n'
-#         for chksum, block in files.iteritems():
-#             for key, value in block.iteritems():
-#                 to_file += key + ": " + value
-#                 to_file += '\n'
-#             
-#             to_file += '\n'
 
 
 def create_header(source, package, spdx):
@@ -383,75 +449,4 @@ if __name__ == '__main__':
             database_user, database_name, database_host, database_port, 
             database_pass, scanner_command, scanner_flag)
     end = time.clock()
-    logger.info('Finished operations @%s in %s' % (datetime.datetime.now(), end-start)
-
-
-
-# Factory for uncompressing a file
-# Implement later 
-#
-# class CompressedFile (object):
-#     magic = None
-#     file_type = None
-#     mime_type = None
-#     proper_extension = None
-# 
-#     def __init__(self, f):
-#         # f is an open file or file like object
-#         self.f = f
-#         self.accessor = self.open()
-# 
-#     @classmethod
-#     def is_magic(self, data):
-#         return data.startswith(self.magic)
-# 
-#     def open(self):
-#         return None
-# 
-# import zipfile
-# 
-# class ZIPFile (CompressedFile):
-#     magic = '\x50\x4b\x03\x04'
-#     file_type = 'zip'
-#     mime_type = 'compressed/zip'
-# 
-#     def open(self):
-#         return zipfile.ZipFile(self.f)
-# 
-# import bz2
-# 
-# class BZ2File (CompressedFile):
-#     magic = '\x42\x5a\x68'
-#     file_type = 'bz2'
-#     mime_type = 'compressed/bz2'
-# 
-#     def open(self):
-#         return bz2.BZ2File(self.f)
-# 
-# import gzip
-# 
-# class GZFile (CompressedFile):
-#     magic = '\x1f\x8b\x08'
-#     file_type = 'gz'
-#     mime_type = 'compressed/gz'
-# 
-#     def open(self):
-#         return gzip.GzipFile(self.f)
-# 
-# 
-# # factory function to create a suitable instance for accessing files
-# def get_compressed_file(filename):
-#     with file(filename, 'rb') as f:
-#         start_of_file = f.read(1024)
-#         f.seek(0)
-#         for cls in (ZIPFile, BZ2File, GZFile):
-#             if cls.is_magic(start_of_file):
-#                 return cls(f)
-# 
-#         return None
-# 
-# filename='test.zip'
-# cf = get_compressed_file(filename)
-# if cf is not None:
-#     print filename, 'is a', cf.mime_type, 'file'
-#     print cf.accessor
+    logger.info('Finished operations @%s in %s' % (datetime.datetime.now(), end-start))
