@@ -10,26 +10,7 @@ class PackageFile(object):
     Represents a file in a package
     @author: Corbin Haughawout
     '''
-
-    file_id = None
-    file_name = None
-    file_type = None
-    file_copyright_text = None
-    artifact_of_project_name = None
-    artifact_of_project_homepage = None
-    artifact_of_project_uri = None
-    license_concluded = None
-    license_info_in_file = None
-    file_checksum = None
-    file_checksum_algorithm = None
-    relative_path = None
-    license_comments = None
-    file_notice = None
-    file_contributor = None
-    file_dependency = None
-    created_at = None
-    updated_at = None
-
+    
     def __init__(self, id, file_name, file_type, file_copyright_text, 
                  artifact_of_project_name, artifact_of_project_homepage,
                  artifact_of_project_uri, license_concluded, license_info_in_file,

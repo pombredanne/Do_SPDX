@@ -42,7 +42,7 @@ from spdx.entity.pfile import PackageFile
 
 LOG_CONFIG_PATH = """./do_spdx_log.cfg"""
 CONFIG_PATH = """./do_spdx.cfg"""
-DO_SPDX_TEMP_DIR = '''/tmp/do_spdx/'''
+DO_SPDX_TEMP_DIR = """/tmp/do_spdx/"""
 
 quiet = None
 force = None
@@ -51,7 +51,7 @@ logging.config.fileConfig(LOG_CONFIG_PATH)
 logger = logging.getLogger()    # Root logger
 package_hash = None
 
-def do_spdx(package, author, spdx_version, 
+def do_spdx(source, author, spdx_version, 
             database_user, database_name, database_host, database_port, 
             database_pass, scanner_command, scanner_flag):
     '''
@@ -61,8 +61,12 @@ def do_spdx(package, author, spdx_version,
     '''
     import os, sys, tarfile
     logger.debug('In Do_SPDX()...')
-    package_hash = hash_file(package)
-    package = package_in_database(package_hash)
+    package_hash = hash_file(source)
+    try:
+        package = package_in_database(package_hash)
+    except Exception as e:
+        logger.error(e.message)
+        raise
     if package is not None:
         logger.info('Package found in database')
         if force:
@@ -73,12 +77,15 @@ def do_spdx(package, author, spdx_version,
                 sys.exit(0) # Exited quietly
             else:
                 logger.info('Creating output then terminating')
-                '''
-                @todo:  implement using entity package
-                ''' 
-                package.package_files = get_associated_files(package.package_id)
-                
-                header = create_header(package)
+                try:
+                    package.package_files = get_associated_files(package.package_id)
+                    spdx_doc = get_package_spdx(package.package_id)
+                    header = create_header(source, package, spdx_doc)
+                    manifest = create_manifest(header, package.package_files)
+                    print manifest
+                except Exception as e:
+                    logger.error(e.message)
+                    raise
                 sys.exit(0)
     
     if not os.path.exists(DO_SPDX_TEMP_DIR):
@@ -89,33 +96,82 @@ def do_spdx(package, author, spdx_version,
     with tarfile.open(package, 'r:gz') as tar:
         tar.extractall(DO_SPDX_TEMP_DIR)
         
-    
-    
+def create_manifest(header, package_files):
+    if not quiet:
+        manifest = header.join("\n")
+        for package_file in package_files:
+            for member in package_file.__dict__:
+                manifest.join(str(member)).join("\n")
+        return manifest
+    return None
+            
+            
+            
+#     if not quiet:
+#         # Construct manifest
+#         to_file = header + '\n'
+#         for chksum, block in files.iteritems():
+#             for key, value in block.iteritems():
+#                 to_file += key + ": " + value
+#                 to_file += '\n'
+#             
+#             to_file += '\n'
 
-"""
-@todo: Get creator information (license scanner)
-"""
-def create_header(package, spdx):
+
+def create_header(source, package, spdx):
     import os
     head = []
     DEFAULT = 'NOASSERTION'
     
     # document level information
-    head.append("SPDXVersion: " + package.spdx_version)
-    head.append("DataLicense: " + package.data_license)
-    head.append("DocumentComment: <text>SPDX for "
-                + package.package_name + " version " + package.package_verification_code
-                + "</text>")
+    head.append("SPDXVersion: " + spdx.spdx_version)
+    head.append("DataLicense: " + spdx.data_license)
+    head.append("DocumentComment: <text>SPDX for %s version %s</text>" % 
+                (package.package_name, package.package_version))
     head.append("")
     
     # creator information
     now = datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
     head.append('## Creation Information')
-    head.append("Creator: ")
+    head.append("Creator: %s" % DEFAULT)
+    head.append("Created: %s" % now)
+    head.append("CreatorComment: <text>UNO</text>")
+    head.append("")
+    
+    head.append("## Package Information")
+    head.append("PackageName: %s" % package.package_name)
+    head.append("PackageVersion: %s" % package.package_version)
+    head.append("PackageDownloadLocation: %s" % package.package_download_location)
+    head.append("PackageSummary: <text>%s</text>" % package.package_summary)
+    head.append("PackageFileName: %s" % os.path.basename(source))
+    head.append("PackageSupplier: Person:%s" % package.package_supplier)
+    head.append("PackageOriginator: Person:%s" % package.package_originator)
+    head.append("PackageChecksum: SHA1: %s" % package.package_checksum)
+    head.append("PackageVerificationCode: %s" % package.package_verification_code)
+    head.append("PackageDescription: <text>%s version %s</text>" % (package.package_name, package.package_version))
+    head.append("")
+    head.append("PackageCopyrightText: <text>%s</text>" % package.package_copyright_text)
+    head.append("")
+    head.append("PackageLicenseDeclared: %s" % package.package_license_declared)
+    head.append("PackageLicenseConcluded: %s" % package.package_license_concluded)
+    head.append("PackageLicenseInfoFromFiles: %s" % package.package_license_info_from_files)
+    head.append("")
+    
+    ## header for file level
+    head.append("## File Information")
+    head.append("")
+    
+    return "\n".join(head)
+    
+    
+    
     
     
     
 def get_package_spdx(package_id):
+    '''
+    @raise Exception: Raises an Exception if database query fails.
+    '''
     import MySQLdb as mysql
     
     with mysql.connect(user=database_user, password=database_pass,
@@ -134,6 +190,9 @@ def get_package_spdx(package_id):
         return None
 
 def get_associated_files(package_id):
+    '''
+    @raise Exception: Raises an Exception if database query fails.
+    '''
     import MySQLdb as mysql
     
     with mysql.connect(user=database_user, password=database_pass, 
@@ -157,7 +216,10 @@ def get_associated_files(package_id):
             return tuple(package_files)
         return None
 
-def insert_new_package(package, package_files,):
+def insert_new_package(package, package_files):
+    '''
+    @raise Exception: Raises an Exception if Insertion into database fails.
+    '''
     import MySQLdb as mysql
     
     with mysql.connect(user=database_user, password=database_pass, 
@@ -169,6 +231,7 @@ def insert_new_package(package, package_files,):
             cur.commit()
         except:
             cur.rollback()
+            raise
 
 def package_in_database(package_checksum):
     '''
