@@ -118,16 +118,19 @@ def do_spdx(source, author, spdx_version,
         for to_add in unmatched_files:
             tar.add(to_add)
             
-    scanner_file_info = run_scanner(scanner_command, scanner_flag)
+    scanner_file_info = run_scanner(scanner_command, scanner_flag, tmp_tar)
     
     
-def run_scanner(scanner_command, scanner_flag):
-    import json, string, subprocess
+def run_scanner(scanner_command, scanner_flag, tarfile):
+    import string, subprocess, json
     
-    p = subprocess.Popen(scanner_command % scanner_flag, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    scanner_output = p.communicate()
+    p = subprocess.Popen([scanner_command % (scanner_flag, tarfile)], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    scanner_output, _ = p.communicate()
     
-    records = json.
+    scanner_output = json.loads(scanner_output)
+    for field in scanner_output:
+        contents = scanner_output[field]
+        
     
     
 def get_file_sets(contents):
@@ -228,10 +231,6 @@ def create_header(source, package, spdx):
     head.append("")
     
     return "\n".join(head)
-    
-    
-    
-    
     
     
 def get_package_spdx(package_id):

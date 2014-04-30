@@ -26,7 +26,6 @@ class Package(object):
         SPDX documentation is generated from this.
     @author: Corbin Haughawout
     '''
-
     def __init__(self, _id=None, package_name=None, package_file_name=None, package_download_location, package_copyright_text,
                  package_version, package_description, package_summary, package_originator,
                  package_supplier, package_license_concluded, package_license_declared, package_checksum,
@@ -57,8 +56,5 @@ class Package(object):
         self.package_verification_code = package_verification_code
         self.package_verification_code_excluded_file = package_verification_code_excluded_file
         self.created_at = created_at
-        self.updated_at = updated_at
-        
+        self.updated_at = updated_at    
     
-        
-        

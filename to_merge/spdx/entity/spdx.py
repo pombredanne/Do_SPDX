@@ -18,10 +18,6 @@ Created on Apr 28, 2014
 @see: www.spdx.org
 @author: Corbin Haughawout
 '''
-import logging
-
-logger = logging.getLogger()
-
 class SPDX(object):
     '''
     @summary: The SPDX class represents an SPDX document, a manifest of licensing information for a software package.
