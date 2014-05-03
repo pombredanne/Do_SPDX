@@ -26,6 +26,7 @@ class Package(object):
         SPDX documentation is generated from this.
     @author: Corbin Haughawout
     '''
+    import json
     def __init__(self, _id=None, package_name=None, package_file_name=None, package_download_location, package_copyright_text,
                  package_version, package_description, package_summary, package_originator,
                  package_supplier, package_license_concluded, package_license_declared, package_checksum,
@@ -58,3 +59,5 @@ class Package(object):
         self.created_at = created_at
         self.updated_at = updated_at    
     
+    def to_JSON(self):
+        return json.encode(dict(self.__name__ : [member for member in vars(self)]))

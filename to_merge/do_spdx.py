@@ -117,19 +117,20 @@ def do_spdx(source, author, spdx_version,
     with tarfile.open(tmp_tar, "w:gz") as tar:
         for to_add in unmatched_files:
             tar.add(to_add)
-            
-    scanner_file_info = run_scanner(scanner_command, scanner_flag, tmp_tar)
+        print repr(tar)
+
+#     scanner_file_info = run_scanner(scanner_command, scanner_flag, tmp_tar)
     
     
-def run_scanner(scanner_command, scanner_flag, tarfile):
-    import string, subprocess, json
+# def run_scanner(scanner_command, scanner_flag, tarfile):
+#     import string, subprocess, json
     
-    p = subprocess.Popen([scanner_command % (scanner_flag, tarfile)], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    scanner_output, _ = p.communicate()
+#     p = subprocess.Popen([scanner_command % (scanner_flag, tarfile)], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+#     scanner_output, _ = p.communicate()
     
-    scanner_output = json.loads(scanner_output)
-    for field in scanner_output:
-        contents = scanner_output[field]
+#     scanner_output = json.loads(scanner_output)
+#     for field in scanner_output:
+#         contents = scanner_output[field]
         
     
     
